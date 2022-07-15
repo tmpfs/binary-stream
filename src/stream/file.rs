@@ -1,5 +1,5 @@
 //! Stream for operating on files.
-use crate::{BinaryError, ReadStream, Result, SeekStream, WriteStream};
+use crate::{BinaryError, ReadStream, BinaryResult, SeekStream, WriteStream};
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Read, SeekFrom, Write};
@@ -26,7 +26,7 @@ pub struct FileStream {
 
 impl FileStream {
     /// Create a file stream.
-    pub fn new<P: AsRef<Path>>(path: P, open_type: OpenType) -> Result<FileStream> {
+    pub fn new<P: AsRef<Path>>(path: P, open_type: OpenType) -> BinaryResult<FileStream> {
         let file = match open_type {
             OpenType::OpenAndCreate => fs::File::create(path)?,
             OpenType::ReadWrite => OpenOptions::new().read(true).write(true).open(path)?,
@@ -37,15 +37,15 @@ impl FileStream {
 }
 
 impl SeekStream for FileStream {
-    fn seek(&mut self, to: usize) -> Result<usize> {
+    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
         Ok(self.file.seek(SeekFrom::Start(to as u64))? as usize)
     }
 
-    fn tell(&mut self) -> Result<usize> {
+    fn tell(&mut self) -> BinaryResult<usize> {
         Ok(self.file.seek(SeekFrom::Current(0))? as usize)
     }
 
-    fn len(&self) -> Result<usize> {
+    fn len(&self) -> BinaryResult<usize> {
         Ok(self.file.metadata()?.len().try_into()?)
     }
 }

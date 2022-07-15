@@ -1,5 +1,5 @@
 //! Stream that reads from a slice of bytes.
-use crate::{BinaryError, ReadStream, Result, SeekStream};
+use crate::{BinaryError, ReadStream, BinaryResult, SeekStream};
 use std::io::{Error, ErrorKind, Read};
 
 /// Stream that wraps a slice of bytes.
@@ -19,16 +19,16 @@ impl<'a> SliceStream<'a> {
 }
 
 impl SeekStream for SliceStream<'_> {
-    fn seek(&mut self, to: usize) -> Result<usize> {
+    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
         self.position = to;
         Ok(self.position)
     }
 
-    fn tell(&mut self) -> Result<usize> {
+    fn tell(&mut self) -> BinaryResult<usize> {
         Ok(self.position)
     }
 
-    fn len(&self) -> Result<usize> {
+    fn len(&self) -> BinaryResult<usize> {
         Ok(self.buffer.len())
     }
 }
