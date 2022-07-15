@@ -1,17 +1,17 @@
 use anyhow::Result;
+use std::fs::File;
 use binary_stream::{
-    BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, OpenType, SeekStream, SliceStream,
+    BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream, SliceStream,
 };
 
 fn create_writer_stream(name: &str) -> FileStream {
     let name = format!("{}.test", name);
-    FileStream::new(&name, OpenType::OpenAndCreate)
-        .expect("Failed to open stream")
+    FileStream(File::create(&name).unwrap())
 }
 
 fn create_reader_stream(name: &str) -> FileStream {
     let name = format!("{}.test", name);
-    FileStream::new(&name, OpenType::Open).expect("Failed to open stream")
+    FileStream(File::open(&name).unwrap())
 }
 
 fn cleanup(name: &str) {
