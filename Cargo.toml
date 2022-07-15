@@ -1,11 +1,13 @@
 [package]
 name = "binary-stream"
 version = "3.0.0"
-authors = ["Mathias Danielsen <mathiasda98@hotmail.com>", "Muji <muji@tmpfs.org>"]
+authors = [
+  "Mathias Danielsen <mathiasda98@hotmail.com>",
+  "Muji <muji@tmpfs.org>"
+]
 edition = "2021"
-
 description = "Binary stream reader and writer"
-repository = "https://github.com/mathias234/binary-rs"
+repository = "https://github.com/tmpfs/binary-stream"
 readme = "README.md"
 keywords = ["binary", "reader", "writer"]
 license = "MIT"
