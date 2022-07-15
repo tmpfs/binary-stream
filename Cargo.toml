@@ -1,10 +1,10 @@
 [package]
-name = "binary_rw"
+name = "binary-stream"
 version = "3.0.0"
-authors = ["Mathias Danielsen <mathiasda98@hotmail.com>"]
+authors = ["Mathias Danielsen <mathiasda98@hotmail.com>", "Muji <muji@tmpfs.org>"]
 edition = "2021"
 
-description = "A binary reader/writer library for rust"
+description = "Binary stream reader and writer"
 repository = "https://github.com/mathias234/binary-rs"
 readme = "README.md"
 keywords = ["binary", "reader", "writer"]

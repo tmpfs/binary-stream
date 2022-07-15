@@ -1,11 +1,12 @@
 use anyhow::Result;
-use binary_rw::{
+use binary_stream::{
     BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, OpenType, SeekStream, SliceStream,
 };
 
 fn create_writer_stream(name: &str) -> FileStream {
     let name = format!("{}.test", name);
-    FileStream::new(&name, OpenType::OpenAndCreate).expect("Failed to open stream")
+    FileStream::new(&name, OpenType::OpenAndCreate)
+        .expect("Failed to open stream")
 }
 
 fn create_reader_stream(name: &str) -> FileStream {
