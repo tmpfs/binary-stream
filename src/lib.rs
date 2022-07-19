@@ -95,7 +95,7 @@ impl<'a> SeekStream for BinaryReader<'a> {
 
 impl<'a> BinaryReader<'a> {
     /// Create a binary reader with the given endianness.
-    pub fn new(stream: &'a mut impl ReadStream, endian: Endian) -> Self {
+    pub fn new(stream: &'a mut dyn ReadStream, endian: Endian) -> Self {
         Self { stream, endian }
     }
 
@@ -258,7 +258,7 @@ impl<'a> SeekStream for BinaryWriter<'a> {
 
 impl<'a> BinaryWriter<'a> {
     /// Create a binary writer with the given endianness.
-    pub fn new(stream: &'a mut impl WriteStream, endian: Endian) -> Self {
+    pub fn new(stream: &'a mut dyn WriteStream, endian: Endian) -> Self {
         Self { stream, endian }
     }
 
