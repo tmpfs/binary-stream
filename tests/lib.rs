@@ -1,8 +1,8 @@
 use anyhow::Result;
-use std::fs::File;
 use binary_stream::{
     BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream, SliceStream,
 };
+use std::fs::File;
 
 fn create_writer_stream(name: &str) -> FileStream {
     let name = format!("{}.test", name);

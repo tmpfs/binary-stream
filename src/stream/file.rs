@@ -1,5 +1,5 @@
 //! Stream for operating on files.
-use crate::{BinaryError, ReadStream, BinaryResult, SeekStream, WriteStream};
+use crate::{BinaryError, BinaryResult, ReadStream, SeekStream, WriteStream};
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Read, SeekFrom, Write};
 
