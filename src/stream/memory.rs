@@ -7,6 +7,12 @@ pub struct MemoryStream {
     cursor: Cursor<Vec<u8>>,
 }
 
+impl Default for MemoryStream {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MemoryStream {
     /// Create a memory stream.
     pub fn new() -> Self {
@@ -61,9 +67,9 @@ impl From<Vec<u8>> for MemoryStream {
     }
 }
 
-impl Into<Vec<u8>> for MemoryStream {
-    fn into(self) -> Vec<u8> {
-        self.cursor.into_inner()
+impl From<MemoryStream> for Vec<u8> {
+    fn from(stream: MemoryStream) -> Self {
+        stream.cursor.into_inner()
     }
 }
 
