@@ -60,9 +60,9 @@ impl Default for Endian {
 /// Trait for streams that can seek.
 pub trait SeekStream {
     /// Seek to a position.
-    fn seek(&mut self, to: usize) -> BinaryResult<usize>;
+    fn seek(&mut self, to: u64) -> BinaryResult<u64>;
     /// Get the current position.
-    fn tell(&mut self) -> BinaryResult<usize>;
+    fn tell(&mut self) -> BinaryResult<u64>;
     /// Get the length of the stream.
     fn len(&self) -> BinaryResult<usize>;
 }
@@ -80,11 +80,11 @@ pub struct BinaryReader<'a> {
 }
 
 impl<'a> SeekStream for BinaryReader<'a> {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
+    fn tell(&mut self) -> BinaryResult<u64> {
         self.stream.tell()
     }
 
@@ -243,11 +243,11 @@ pub struct BinaryWriter<'a> {
 }
 
 impl<'a> SeekStream for BinaryWriter<'a> {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
+    fn tell(&mut self) -> BinaryResult<u64> {
         self.stream.tell()
     }
 

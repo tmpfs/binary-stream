@@ -1,56 +1,45 @@
 //! Stream that reads from a slice of bytes.
 use crate::{BinaryError, BinaryResult, ReadStream, SeekStream};
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Cursor, Error, ErrorKind, Read, Seek, SeekFrom};
 
 /// Stream that wraps a slice of bytes.
 pub struct SliceStream<'a> {
-    buffer: &'a [u8],
-    position: usize,
+    cursor: Cursor<&'a [u8]>,
 }
 
 impl<'a> SliceStream<'a> {
     /// Create a slice stream.
     pub fn new(buffer: &'a [u8]) -> Self {
         Self {
-            buffer,
-            position: 0,
+            cursor: Cursor::new(buffer),
         }
     }
 }
 
 impl SeekStream for SliceStream<'_> {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
-        self.position = to;
-        Ok(self.position)
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.cursor.seek(SeekFrom::Start(to))?)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
-        Ok(self.position)
+    fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.cursor.stream_position()?)
     }
 
     fn len(&self) -> BinaryResult<usize> {
-        Ok(self.buffer.len())
+        Ok(self.cursor.get_ref().len())
     }
 }
 
 impl Read for SliceStream<'_> {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if self.position + buffer.len() > self.buffer.len() {
+        if self.cursor.position() as usize + buffer.len() > self.cursor.get_ref().len() {
             return Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 BinaryError::ReadPastEof,
             ));
         }
 
-        let mut idx = 0;
-        for i in self.position..self.position + buffer.len() {
-            buffer[idx] = self.buffer[i];
-            idx += 1;
-        }
-
-        self.position += buffer.len();
-
-        Ok(buffer.len())
+        self.cursor.read(buffer)
     }
 }
 

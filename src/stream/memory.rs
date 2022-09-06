@@ -17,13 +17,12 @@ impl MemoryStream {
 }
 
 impl SeekStream for MemoryStream {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
-        let position = self.cursor.seek(SeekFrom::Start(to as u64))?;
-        Ok(position as usize)
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.cursor.seek(SeekFrom::Start(to))?)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
-        Ok(self.cursor.stream_position()? as usize)
+    fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.cursor.stream_position()?)
     }
 
     fn len(&self) -> BinaryResult<usize> {

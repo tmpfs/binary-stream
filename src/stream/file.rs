@@ -7,12 +7,12 @@ use std::io::{Error, ErrorKind, Read, SeekFrom, Write};
 pub struct FileStream(pub std::fs::File);
 
 impl SeekStream for FileStream {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
-        Ok(self.0.seek(SeekFrom::Start(to as u64))? as usize)
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.0.seek(SeekFrom::Start(to))?)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
-        Ok(self.0.seek(SeekFrom::Current(0))? as usize)
+    fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.0.seek(SeekFrom::Current(0))?)
     }
 
     fn len(&self) -> BinaryResult<usize> {
@@ -22,7 +22,7 @@ impl SeekStream for FileStream {
 
 impl Read for FileStream {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if self.tell().unwrap() + buffer.len() > self.0.metadata()?.len() as usize {
+        if self.tell().unwrap() as usize + buffer.len() > self.0.metadata()?.len() as usize {
             return Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 BinaryError::ReadPastEof,
