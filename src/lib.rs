@@ -268,7 +268,10 @@ impl<'a> BinaryWriter<'a> {
     /// The length of the `String` is written as a `usize`
     /// unless the `wasm32` feature is enabled
     /// in which case the length is a `u32`.
-    pub fn write_string<S: AsRef<str>>(&mut self, value: S) -> BinaryResult<usize> {
+    pub fn write_string<S: AsRef<str>>(
+        &mut self,
+        value: S,
+    ) -> BinaryResult<usize> {
         let bytes = value.as_ref().as_bytes();
         if cfg!(feature = "wasm32") {
             self.write_u32(bytes.len() as u32)?;
@@ -279,78 +282,123 @@ impl<'a> BinaryWriter<'a> {
     }
 
     /// Write a character to the stream.
-    pub fn write_char<V: Borrow<char>>(&mut self, v: V) -> BinaryResult<usize> {
+    pub fn write_char<V: Borrow<char>>(
+        &mut self,
+        v: V,
+    ) -> BinaryResult<usize> {
         self.write_u32(*v.borrow() as u32)
     }
 
     /// Write a `bool` to the stream.
-    pub fn write_bool<V: Borrow<bool>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_bool<V: Borrow<bool>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         let written = self.write_u8(if *value.borrow() { 1 } else { 0 })?;
         Ok(written)
     }
 
     /// Write a `f32` to the stream.
-    pub fn write_f32<V: Borrow<f32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_f32<V: Borrow<f32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `f64` to the stream.
-    pub fn write_f64<V: Borrow<f64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_f64<V: Borrow<f64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `isize` to the stream.
-    pub fn write_isize<V: Borrow<isize>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_isize<V: Borrow<isize>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `usize` to the stream.
-    pub fn write_usize<V: Borrow<usize>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_usize<V: Borrow<usize>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u64` to the stream.
-    pub fn write_u64<V: Borrow<u64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u64<V: Borrow<u64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i64` to the stream.
-    pub fn write_i64<V: Borrow<i64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i64<V: Borrow<i64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u32` to the stream.
-    pub fn write_u32<V: Borrow<u32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u32<V: Borrow<u32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i32` to the stream.
-    pub fn write_i32<V: Borrow<i32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i32<V: Borrow<i32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u16` to the stream.
-    pub fn write_u16<V: Borrow<u16>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u16<V: Borrow<u16>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i16` to the stream.
-    pub fn write_i16<V: Borrow<i16>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i16<V: Borrow<i16>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u8` to the stream.
-    pub fn write_u8<V: Borrow<u8>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u8<V: Borrow<u8>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i8` to the stream.
-    pub fn write_i8<V: Borrow<i8>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i8<V: Borrow<i8>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a byte buffer to the stream.
-    pub fn write_bytes<B: AsRef<[u8]>>(&mut self, data: B) -> BinaryResult<usize> {
+    pub fn write_bytes<B: AsRef<[u8]>>(
+        &mut self,
+        data: B,
+    ) -> BinaryResult<usize> {
         Ok(self.stream.write(data.as_ref())?)
     }
 }

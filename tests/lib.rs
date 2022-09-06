@@ -1,6 +1,7 @@
 use anyhow::Result;
 use binary_stream::{
-    BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream, SliceStream,
+    BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream,
+    SliceStream,
 };
 use std::fs::File;
 
@@ -109,6 +110,7 @@ fn borrow_test() -> Result<()> {
 }
 
 #[test]
+#[cfg(not(feature = "wasm32"))]
 fn slice_test() -> Result<()> {
     let mut stream = MemoryStream::new();
     let mut writer = BinaryWriter::new(&mut stream, Endian::Big);

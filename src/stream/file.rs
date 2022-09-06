@@ -22,7 +22,9 @@ impl SeekStream for FileStream {
 
 impl Read for FileStream {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if self.tell().unwrap() as usize + buffer.len() > self.0.metadata()?.len() as usize {
+        if self.tell().unwrap() as usize + buffer.len()
+            > self.0.metadata()?.len() as usize
+        {
             return Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 BinaryError::ReadPastEof,

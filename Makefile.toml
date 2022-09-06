@@ -31,18 +31,14 @@ args = ["clean"]
 
 [tasks.docs]
 command = "cargo"
-args = ["doc", "--all", "--open", "--no-deps"]
+args = ["doc", "--open", "--no-deps"]
 
 [tasks.unit]
 command = "cargo"
-args = ["test", "--all", "--lib", "--", "--nocapture"]
-
-[tasks.integration]
-command = "cargo"
-args = ["test", "integration", "--", "--nocapture"]
+args = ["test", "--lib", "--", "--nocapture"]
 
 [tasks.test]
-dependencies = ["unit", "integration"]
+dependencies = ["unit"]
 
 [tasks.dev]
 dependencies = ["test", "format"]
@@ -56,7 +52,7 @@ rm -f ./target/lcov.info
 
 [tasks.genhtml]
 script = '''
-grcov . -s . --binary-path ./target/debug -t html --branch --ignore-not-existing -o ./target/coverage/ --ignore 'src/*' --ignore 'tests/*' --ignore 'target/*'
+grcov . -s . --binary-path ./target/debug -t html --branch --ignore-not-existing -o ./target/coverage/ --ignore 'tests/*' --ignore 'target/*'
 '''
 
 [tasks.cover]

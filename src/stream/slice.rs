@@ -32,7 +32,9 @@ impl SeekStream for SliceStream<'_> {
 
 impl Read for SliceStream<'_> {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if self.cursor.position() as usize + buffer.len() > self.cursor.get_ref().len() {
+        if self.cursor.position() as usize + buffer.len()
+            > self.cursor.get_ref().len()
+        {
             return Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 BinaryError::ReadPastEof,
