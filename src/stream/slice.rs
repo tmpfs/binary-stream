@@ -25,8 +25,8 @@ impl SeekStream for SliceStream<'_> {
         Ok(self.cursor.stream_position()?)
     }
 
-    fn len(&self) -> BinaryResult<usize> {
-        Ok(self.cursor.get_ref().len())
+    fn len(&self) -> BinaryResult<u64> {
+        Ok(self.cursor.get_ref().len() as u64)
     }
 }
 

@@ -65,7 +65,7 @@ pub trait SeekStream {
     /// Get the current position.
     fn tell(&mut self) -> BinaryResult<u64>;
     /// Get the length of the stream.
-    fn len(&self) -> BinaryResult<usize>;
+    fn len(&self) -> BinaryResult<u64>;
 }
 
 /// Trait for a readable stream.
@@ -89,7 +89,7 @@ impl<'a> SeekStream for BinaryReader<'a> {
         self.stream.tell()
     }
 
-    fn len(&self) -> BinaryResult<usize> {
+    fn len(&self) -> BinaryResult<u64> {
         self.stream.len()
     }
 }
@@ -252,7 +252,7 @@ impl<'a> SeekStream for BinaryWriter<'a> {
         self.stream.tell()
     }
 
-    fn len(&self) -> BinaryResult<usize> {
+    fn len(&self) -> BinaryResult<u64> {
         self.stream.len()
     }
 }

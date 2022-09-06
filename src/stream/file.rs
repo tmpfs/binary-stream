@@ -15,8 +15,8 @@ impl SeekStream for FileStream {
         Ok(self.0.seek(SeekFrom::Current(0))?)
     }
 
-    fn len(&self) -> BinaryResult<usize> {
-        Ok(self.0.metadata()?.len().try_into()?)
+    fn len(&self) -> BinaryResult<u64> {
+        Ok(self.0.metadata()?.len())
     }
 }
 
