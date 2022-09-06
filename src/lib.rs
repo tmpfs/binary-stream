@@ -58,13 +58,14 @@ impl Default for Endian {
 }
 
 /// Trait for streams that can seek.
+#[allow(clippy::len_without_is_empty)]
 pub trait SeekStream {
     /// Seek to a position.
-    fn seek(&mut self, to: usize) -> BinaryResult<usize>;
+    fn seek(&mut self, to: u64) -> BinaryResult<u64>;
     /// Get the current position.
-    fn tell(&mut self) -> BinaryResult<usize>;
+    fn tell(&mut self) -> BinaryResult<u64>;
     /// Get the length of the stream.
-    fn len(&self) -> BinaryResult<usize>;
+    fn len(&self) -> BinaryResult<u64>;
 }
 
 /// Trait for a readable stream.
@@ -80,15 +81,15 @@ pub struct BinaryReader<'a> {
 }
 
 impl<'a> SeekStream for BinaryReader<'a> {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
+    fn tell(&mut self) -> BinaryResult<u64> {
         self.stream.tell()
     }
 
-    fn len(&self) -> BinaryResult<usize> {
+    fn len(&self) -> BinaryResult<u64> {
         self.stream.len()
     }
 }
@@ -104,12 +105,12 @@ impl<'a> BinaryReader<'a> {
         let chars = if cfg!(feature = "wasm32") {
             let str_len = self.read_u32()?;
             let mut chars: Vec<u8> = vec![0; str_len as usize];
-            self.stream.read(&mut chars)?;
+            self.stream.read_exact(&mut chars)?;
             chars
         } else {
             let str_len = self.read_usize()?;
             let mut chars: Vec<u8> = vec![0; str_len];
-            self.stream.read(&mut chars)?;
+            self.stream.read_exact(&mut chars)?;
             chars
         };
         Ok(String::from_utf8(chars)?)
@@ -117,7 +118,7 @@ impl<'a> BinaryReader<'a> {
 
     /// Read a character from the stream.
     pub fn read_char(&mut self) -> BinaryResult<char> {
-        Ok(std::char::from_u32(self.read_u32()?).ok_or_else(|| BinaryError::InvalidChar)?)
+        std::char::from_u32(self.read_u32()?).ok_or(BinaryError::InvalidChar)
     }
 
     /// Read a `bool` from the stream.
@@ -129,14 +130,14 @@ impl<'a> BinaryReader<'a> {
     /// Read a `f32` from the stream.
     pub fn read_f32(&mut self) -> BinaryResult<f32> {
         let mut buffer: [u8; 4] = [0; 4];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, f32);
     }
 
     /// Read a `f64` from the stream.
     pub fn read_f64(&mut self) -> BinaryResult<f64> {
         let mut buffer: [u8; 8] = [0; 8];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, f64);
     }
 
@@ -144,7 +145,7 @@ impl<'a> BinaryReader<'a> {
     #[cfg(target_arch = "wasm32")]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 4] = [0; 4];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, isize);
     }
 
@@ -152,7 +153,7 @@ impl<'a> BinaryReader<'a> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 8] = [0; 8];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, isize);
     }
 
@@ -160,7 +161,7 @@ impl<'a> BinaryReader<'a> {
     #[cfg(target_arch = "wasm32")]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 4] = [0; 4];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, usize);
     }
 
@@ -168,70 +169,70 @@ impl<'a> BinaryReader<'a> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 8] = [0; 8];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, usize);
     }
 
     /// Read a `u64` from the stream.
     pub fn read_u64(&mut self) -> BinaryResult<u64> {
         let mut buffer: [u8; 8] = [0; 8];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, u64);
     }
 
     /// Read an `i64` from the stream.
     pub fn read_i64(&mut self) -> BinaryResult<i64> {
         let mut buffer: [u8; 8] = [0; 8];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, i64);
     }
 
     /// Read a `u32` from the stream.
     pub fn read_u32(&mut self) -> BinaryResult<u32> {
         let mut buffer: [u8; 4] = [0; 4];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, u32);
     }
 
     /// Read an `i32` from the stream.
     pub fn read_i32(&mut self) -> BinaryResult<i32> {
         let mut buffer: [u8; 4] = [0; 4];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, i32);
     }
 
     /// Read a `u16` from the stream.
     pub fn read_u16(&mut self) -> BinaryResult<u16> {
         let mut buffer: [u8; 2] = [0; 2];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, u16);
     }
 
     /// Read an `i16` from the stream.
     pub fn read_i16(&mut self) -> BinaryResult<i16> {
         let mut buffer: [u8; 2] = [0; 2];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, i16);
     }
 
     /// Read a `u8` from the stream.
     pub fn read_u8(&mut self) -> BinaryResult<u8> {
         let mut buffer: [u8; 1] = [0; 1];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, u8);
     }
 
     /// Read an `i8` from the stream.
     pub fn read_i8(&mut self) -> BinaryResult<i8> {
         let mut buffer: [u8; 1] = [0; 1];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         decode!(self.endian, buffer, i8);
     }
 
     /// Read bytes from the stream into a buffer.
     pub fn read_bytes(&mut self, length: usize) -> BinaryResult<Vec<u8>> {
         let mut buffer: Vec<u8> = vec![0; length];
-        self.stream.read(&mut buffer)?;
+        self.stream.read_exact(&mut buffer)?;
         Ok(buffer)
     }
 }
@@ -243,15 +244,15 @@ pub struct BinaryWriter<'a> {
 }
 
 impl<'a> SeekStream for BinaryWriter<'a> {
-    fn seek(&mut self, to: usize) -> BinaryResult<usize> {
+    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> BinaryResult<usize> {
+    fn tell(&mut self) -> BinaryResult<u64> {
         self.stream.tell()
     }
 
-    fn len(&self) -> BinaryResult<usize> {
+    fn len(&self) -> BinaryResult<u64> {
         self.stream.len()
     }
 }
@@ -267,89 +268,137 @@ impl<'a> BinaryWriter<'a> {
     /// The length of the `String` is written as a `usize`
     /// unless the `wasm32` feature is enabled
     /// in which case the length is a `u32`.
-    pub fn write_string<S: AsRef<str>>(&mut self, value: S) -> BinaryResult<usize> {
+    pub fn write_string<S: AsRef<str>>(
+        &mut self,
+        value: S,
+    ) -> BinaryResult<usize> {
         let bytes = value.as_ref().as_bytes();
         if cfg!(feature = "wasm32") {
             self.write_u32(bytes.len() as u32)?;
         } else {
             self.write_usize(bytes.len())?;
         }
-        Ok(self.stream.write(&bytes.to_vec())?)
+        Ok(self.stream.write(bytes)?)
     }
 
     /// Write a character to the stream.
-    pub fn write_char<V: Borrow<char>>(&mut self, v: V) -> BinaryResult<usize> {
+    pub fn write_char<V: Borrow<char>>(
+        &mut self,
+        v: V,
+    ) -> BinaryResult<usize> {
         self.write_u32(*v.borrow() as u32)
     }
 
     /// Write a `bool` to the stream.
-    pub fn write_bool<V: Borrow<bool>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_bool<V: Borrow<bool>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         let written = self.write_u8(if *value.borrow() { 1 } else { 0 })?;
         Ok(written)
     }
 
     /// Write a `f32` to the stream.
-    pub fn write_f32<V: Borrow<f32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_f32<V: Borrow<f32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `f64` to the stream.
-    pub fn write_f64<V: Borrow<f64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_f64<V: Borrow<f64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `isize` to the stream.
-    pub fn write_isize<V: Borrow<isize>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_isize<V: Borrow<isize>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `usize` to the stream.
-    pub fn write_usize<V: Borrow<usize>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_usize<V: Borrow<usize>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u64` to the stream.
-    pub fn write_u64<V: Borrow<u64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u64<V: Borrow<u64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i64` to the stream.
-    pub fn write_i64<V: Borrow<i64>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i64<V: Borrow<i64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u32` to the stream.
-    pub fn write_u32<V: Borrow<u32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u32<V: Borrow<u32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i32` to the stream.
-    pub fn write_i32<V: Borrow<i32>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i32<V: Borrow<i32>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u16` to the stream.
-    pub fn write_u16<V: Borrow<u16>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u16<V: Borrow<u16>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i16` to the stream.
-    pub fn write_i16<V: Borrow<i16>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i16<V: Borrow<i16>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u8` to the stream.
-    pub fn write_u8<V: Borrow<u8>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_u8<V: Borrow<u8>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i8` to the stream.
-    pub fn write_i8<V: Borrow<i8>>(&mut self, value: V) -> BinaryResult<usize> {
+    pub fn write_i8<V: Borrow<i8>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
         encode!(self.endian, value.borrow(), self.stream);
     }
 
     /// Write a byte buffer to the stream.
-    pub fn write_bytes<B: AsRef<[u8]>>(&mut self, data: B) -> BinaryResult<usize> {
+    pub fn write_bytes<B: AsRef<[u8]>>(
+        &mut self,
+        data: B,
+    ) -> BinaryResult<usize> {
         Ok(self.stream.write(data.as_ref())?)
     }
 }
