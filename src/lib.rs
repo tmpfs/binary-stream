@@ -1,11 +1,4 @@
 //! Library for reading and writing binary data.
-//!
-//! If the `wasm32` feature is enabled then length
-//! prefixed strings use a `u32` for the length so
-//! that the encoded data is portable across platforms.
-//!
-//! Otherwise string length is encoded using `usize` which
-//! may vary across platforms.
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
@@ -102,7 +95,7 @@ impl<'a> BinaryReader<'a> {
 
     /// Read a length-prefixed `String` from the stream.
     pub fn read_string(&mut self) -> BinaryResult<String> {
-        let chars = if cfg!(feature = "wasm32") {
+        let chars = if cfg!(target_pointer_width = "32") {
             let str_len = self.read_u32()?;
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
@@ -264,16 +257,12 @@ impl<'a> BinaryWriter<'a> {
     }
 
     /// Write a length-prefixed `String` to the stream.
-    ///
-    /// The length of the `String` is written as a `usize`
-    /// unless the `wasm32` feature is enabled
-    /// in which case the length is a `u32`.
     pub fn write_string<S: AsRef<str>>(
         &mut self,
         value: S,
     ) -> BinaryResult<usize> {
         let bytes = value.as_ref().as_bytes();
-        if cfg!(feature = "wasm32") {
+        if cfg!(target_pointer_width = "32") {
             self.write_u32(bytes.len() as u32)?;
         } else {
             self.write_usize(bytes.len())?;

@@ -1,6 +1,6 @@
 [package]
 name = "binary-stream"
-version = "3.2.1"
+version = "3.2.2"
 authors = [
   "Mathias Danielsen <mathiasda98@hotmail.com>",
   "Muji <muji@tmpfs.org>"
@@ -11,9 +11,6 @@ repository = "https://github.com/tmpfs/binary-stream"
 readme = "README.md"
 keywords = ["binary", "reader", "writer"]
 license = "MIT"
-
-[features]
-wasm32 = []
 
 [dependencies]
 thiserror = "1"
