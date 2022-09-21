@@ -142,7 +142,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read an `isize` from the stream.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_pointer_width = "32")]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
@@ -150,7 +150,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read an `isize` from the stream.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(target_pointer_width = "64")]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
@@ -158,7 +158,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read a `usize` from the stream.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_pointer_width = "32")]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
@@ -166,7 +166,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read a `usize` from the stream.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(target_pointer_width = "64")]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
