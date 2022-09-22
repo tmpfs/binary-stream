@@ -1,9 +1,7 @@
 //! Library for reading and writing binary data.
 //!
-//! If the `32bit` feature is specified then 4 bytes is used 
-//! for usize and isize regardless of `target_pointer_width`.
-//!
-//! Use this when you need portability between 32bit and 64 bit platforms.
+//! Strings are length prefixed using `u64` by default, use 
+//! the `32bit` feature to use `u32` for the string length prefix.
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
@@ -100,14 +98,14 @@ impl<'a> BinaryReader<'a> {
 
     /// Read a length-prefixed `String` from the stream.
     pub fn read_string(&mut self) -> BinaryResult<String> {
-        let chars = if cfg!(any(target_pointer_width = "32", feature = "32bit")) {
+        let chars = if cfg!(feature = "32bit") {
             let str_len = self.read_u32()?;
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
             chars
         } else {
-            let str_len = self.read_usize()?;
-            let mut chars: Vec<u8> = vec![0; str_len];
+            let str_len = self.read_u64()?;
+            let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
             chars
         };
@@ -140,7 +138,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read an `isize` from the stream.
-    #[cfg(any(target_pointer_width = "32", feature = "32bit"))]
+    #[cfg(target_pointer_width = "32")]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
@@ -148,7 +146,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read an `isize` from the stream.
-    #[cfg(all(target_pointer_width = "64", not(feature = "32bit")))]
+    #[cfg(target_pointer_width = "64")]
     pub fn read_isize(&mut self) -> BinaryResult<isize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
@@ -156,7 +154,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read a `usize` from the stream.
-    #[cfg(any(target_pointer_width = "32", feature = "32bit"))]
+    #[cfg(target_pointer_width = "32")]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
@@ -164,7 +162,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     /// Read a `usize` from the stream.
-    #[cfg(all(target_pointer_width = "64", not(feature = "32bit")))]
+    #[cfg(target_pointer_width = "64")]
     pub fn read_usize(&mut self) -> BinaryResult<usize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
@@ -267,10 +265,10 @@ impl<'a> BinaryWriter<'a> {
         value: S,
     ) -> BinaryResult<usize> {
         let bytes = value.as_ref().as_bytes();
-        if cfg!(target_pointer_width = "32") {
+        if cfg!(feature = "32bit") {
             self.write_u32(bytes.len() as u32)?;
         } else {
-            self.write_usize(bytes.len())?;
+            self.write_u64(bytes.len() as u64)?;
         }
         Ok(self.stream.write(bytes)?)
     }

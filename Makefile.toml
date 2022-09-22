@@ -17,9 +17,20 @@ args = ["fmt"]
 command = "cargo"
 args = ["fmt", "--", "--check"]
 
-[tasks.check]
+[tasks.check-current]
 command = "cargo"
 args = ["check"]
+
+[tasks.check-wasm]
+command = "cargo"
+args = ["check", "--target", "wasm32-unknown-unknown"]
+
+[tasks.check-android]
+command = "cargo"
+args = ["check", "--target", "armv7-linux-androideabi"]
+
+[tasks.check]
+dependencies = ["check-current", "check-wasm", "check-android"]
 
 [tasks.clippy]
 command = "cargo"

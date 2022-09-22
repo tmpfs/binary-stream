@@ -110,7 +110,6 @@ fn borrow_test() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(feature = "wasm32"))]
 fn slice_test() -> Result<()> {
     let mut stream = MemoryStream::new();
     let mut writer = BinaryWriter::new(&mut stream, Endian::Big);
@@ -118,7 +117,11 @@ fn slice_test() -> Result<()> {
     writer.write_string("foo")?;
     writer.write_char('b')?;
 
-    assert_eq!(19, writer.len()?);
+    if cfg!(feature = "32bit") {
+        assert_eq!(15, writer.len()?);
+    } else {
+        assert_eq!(19, writer.len()?);
+    }
 
     let buffer: Vec<u8> = stream.into();
 
@@ -137,7 +140,11 @@ fn slice_test() -> Result<()> {
     let value = reader.read_char()?;
     assert_eq!('b', value);
 
-    assert_eq!(19, reader.len()?);
+    if cfg!(feature = "32bit") {
+        assert_eq!(15, reader.len()?);
+    } else {
+        assert_eq!(19, reader.len()?);
+    }
 
     Ok(())
 }
