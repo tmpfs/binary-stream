@@ -44,6 +44,11 @@ fn borrow_test() -> Result<()> {
     writer.write_i64(-64)?;
     writer.write_i64(&-64)?;
 
+    writer.write_u128(128)?;
+    writer.write_u128(&128)?;
+    writer.write_i128(-128)?;
+    writer.write_i128(&-128)?;
+
     writer.write_usize(64)?;
     writer.write_usize(&64)?;
     writer.write_isize(-64)?;
@@ -88,6 +93,11 @@ fn borrow_test() -> Result<()> {
     assert_eq!((64, 64), value);
     let value = (reader.read_i64()?, reader.read_i64()?);
     assert_eq!((-64, -64), value);
+
+    let value = (reader.read_u128()?, reader.read_u128()?);
+    assert_eq!((128, 128), value);
+    let value = (reader.read_i128()?, reader.read_i128()?);
+    assert_eq!((-128, -128), value);
 
     let value = (reader.read_usize()?, reader.read_usize()?);
     assert_eq!((64, 64), value);
@@ -274,6 +284,26 @@ fn read_write_test_i64() -> Result<()> {
 }
 
 #[test]
+fn read_write_test_i128() -> Result<()> {
+    let temp: i128 = 50;
+    let mut stream = create_writer_stream("i128");
+    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+    writer.write_i128(temp)?;
+
+    let mut stream = create_reader_stream("i128");
+    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    let read_temp = reader.read_i128()?;
+
+    assert_eq!(temp, read_temp);
+
+    cleanup("i128");
+
+    Ok(())
+}
+
+#[test]
 fn read_write_test_i32() -> Result<()> {
     let temp: i32 = 50;
     let mut stream = create_writer_stream("i32");
@@ -348,6 +378,26 @@ fn read_write_test_u64() -> Result<()> {
     assert_eq!(temp, read_temp);
 
     cleanup("u64");
+
+    Ok(())
+}
+
+#[test]
+fn read_write_test_u128() -> Result<()> {
+    let temp: u128 = 50;
+    let mut stream = create_writer_stream("u128");
+    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+    writer.write_u128(temp)?;
+
+    let mut stream = create_reader_stream("u128");
+    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    let read_temp = reader.read_u128()?;
+
+    assert_eq!(temp, read_temp);
+
+    cleanup("u128");
 
     Ok(())
 }

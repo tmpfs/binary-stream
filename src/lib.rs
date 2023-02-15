@@ -183,6 +183,20 @@ impl<'a> BinaryReader<'a> {
         decode!(self.endian, buffer, i64);
     }
 
+    /// Read a `u128` from the stream.
+    pub fn read_u128(&mut self) -> BinaryResult<u128> {
+        let mut buffer: [u8; 16] = [0; 16];
+        self.stream.read_exact(&mut buffer)?;
+        decode!(self.endian, buffer, u128);
+    }
+
+    /// Read an `i128` from the stream.
+    pub fn read_i128(&mut self) -> BinaryResult<i128> {
+        let mut buffer: [u8; 16] = [0; 16];
+        self.stream.read_exact(&mut buffer)?;
+        decode!(self.endian, buffer, i128);
+    }
+
     /// Read a `u32` from the stream.
     pub fn read_u32(&mut self) -> BinaryResult<u32> {
         let mut buffer: [u8; 4] = [0; 4];
@@ -332,6 +346,22 @@ impl<'a> BinaryWriter<'a> {
 
     /// Write an `i64` to the stream.
     pub fn write_i64<V: Borrow<i64>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
+        encode!(self.endian, value.borrow(), self.stream);
+    }
+
+    /// Write a `u128` to the stream.
+    pub fn write_u128<V: Borrow<u128>>(
+        &mut self,
+        value: V,
+    ) -> BinaryResult<usize> {
+        encode!(self.endian, value.borrow(), self.stream);
+    }
+
+    /// Write an `i128` to the stream.
+    pub fn write_i128<V: Borrow<i128>>(
         &mut self,
         value: V,
     ) -> BinaryResult<usize> {
