@@ -17,6 +17,7 @@ thiserror = "1"
 
 [dev-dependencies]
 anyhow = "1"
+tempfile = "3"
 
 [features]
 32bit = []

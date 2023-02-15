@@ -46,3 +46,9 @@ impl Write for FileStream {
 
 impl ReadStream for FileStream {}
 impl WriteStream for FileStream {}
+
+impl From<FileStream> for std::fs::File {
+    fn from(value: FileStream) -> Self {
+        value.0
+    }
+}
