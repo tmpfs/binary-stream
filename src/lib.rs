@@ -9,19 +9,15 @@
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
-    io::{Read, Write},
+    io::{Read, Write, Seek, SeekFrom},
 };
 
 #[cfg(feature = "async-tokio")]
 pub mod tokio;
 
 mod error;
-mod stream;
 
 pub use error::BinaryError;
-pub use stream::file::FileStream;
-pub use stream::memory::MemoryStream;
-pub use stream::slice::SliceStream;
 
 /// BinaryResult type for binary errors.
 pub type BinaryResult<T> = std::result::Result<T, BinaryError>;
@@ -63,47 +59,26 @@ impl Default for Endian {
     }
 }
 
-/// Trait for streams that can seek.
-#[allow(clippy::len_without_is_empty)]
-pub trait SeekStream {
-    /// Seek to a position.
-    fn seek(&mut self, to: u64) -> BinaryResult<u64>;
-    /// Get the current position.
-    fn tell(&mut self) -> BinaryResult<u64>;
-    /// Get the length of the stream.
-    fn len(&self) -> BinaryResult<u64>;
-}
-
-/// Trait for a readable stream.
-pub trait ReadStream: Read + SeekStream {}
-
-/// Trait for a writable stream.
-pub trait WriteStream: Write + SeekStream {}
-
 /// Read from a stream.
-pub struct BinaryReader<'a> {
-    stream: &'a mut dyn ReadStream,
+pub struct BinaryReader<R> where R: Read + Seek {
+    stream: R,
     endian: Endian,
 }
 
-impl<'a> SeekStream for BinaryReader<'a> {
-    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
-        self.stream.seek(to)
-    }
-
-    fn tell(&mut self) -> BinaryResult<u64> {
-        self.stream.tell()
-    }
-
-    fn len(&self) -> BinaryResult<u64> {
-        self.stream.len()
-    }
-}
-
-impl<'a> BinaryReader<'a> {
+impl<R: Read + Seek> BinaryReader<R> {
     /// Create a binary reader with the given endianness.
-    pub fn new(stream: &'a mut dyn ReadStream, endian: Endian) -> Self {
+    pub fn new(stream: R, endian: Endian) -> Self {
         Self { stream, endian }
+    }
+    
+    /// Seek to a position.
+    pub fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.stream.seek(SeekFrom::Start(to))?)
+    }
+    
+    /// Get the current seek position.
+    pub fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.stream.stream_position()?)
     }
 
     /// Read a length-prefixed `String` from the stream.
@@ -258,29 +233,25 @@ impl<'a> BinaryReader<'a> {
 }
 
 /// Write to a stream.
-pub struct BinaryWriter<'a> {
-    stream: &'a mut dyn WriteStream,
+pub struct BinaryWriter<W> where W: Write + Seek {
+    stream: W,
     endian: Endian,
 }
 
-impl<'a> SeekStream for BinaryWriter<'a> {
-    fn seek(&mut self, to: u64) -> BinaryResult<u64> {
-        self.stream.seek(to)
-    }
-
-    fn tell(&mut self) -> BinaryResult<u64> {
-        self.stream.tell()
-    }
-
-    fn len(&self) -> BinaryResult<u64> {
-        self.stream.len()
-    }
-}
-
-impl<'a> BinaryWriter<'a> {
+impl<W: Write + Seek> BinaryWriter<W> {
     /// Create a binary writer with the given endianness.
-    pub fn new(stream: &'a mut dyn WriteStream, endian: Endian) -> Self {
+    pub fn new(stream: W, endian: Endian) -> Self {
         Self { stream, endian }
+    }
+
+    /// Seek to a position.
+    pub fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.stream.seek(SeekFrom::Start(to))?)
+    }
+
+    /// Get the current seek position.
+    pub fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.stream.stream_position()?)
     }
 
     /// Write a length-prefixed `String` to the stream.
@@ -438,11 +409,11 @@ impl<'a> BinaryWriter<'a> {
 /// Trait for encoding to binary.
 pub trait Encode {
     /// Encode self into the binary writer.
-    fn encode(&self, writer: &mut BinaryWriter) -> BinaryResult<()>;
+    fn encode<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> BinaryResult<()>;
 }
 
 /// Trait for decoding from binary.
 pub trait Decode {
     /// Decode from the binary reader into self.
-    fn decode(&mut self, reader: &mut BinaryReader) -> BinaryResult<()>;
+    fn decode<R: Read + Seek>(&mut self, reader: &mut BinaryReader<R>) -> BinaryResult<()>;
 }
