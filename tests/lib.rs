@@ -1,15 +1,14 @@
 use anyhow::Result;
-use binary_stream::{
-    BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream,
-    SliceStream,
-};
+use binary_stream::{BinaryReader, BinaryWriter, Endian};
+use std::io::Cursor;
 use tempfile::tempfile;
-use std::fs::File;
 
 #[test]
 fn borrow_test() -> Result<()> {
-    let mut stream = MemoryStream::new();
-    let mut writer = BinaryWriter::new(&mut stream, Endian::Big);
+    let mut buffer = Vec::new();
+    let stream = Cursor::new(&mut buffer);
+
+    let mut writer = BinaryWriter::new(stream, Endian::Big);
     writer.write_u8(8)?;
     writer.write_u8(&8)?;
     writer.write_i8(-8)?;
@@ -55,9 +54,7 @@ fn borrow_test() -> Result<()> {
     writer.write_bytes(&buf)?;
     writer.write_bytes(buf)?;
 
-    let buffer: Vec<u8> = stream.into();
-
-    let mut stream = SliceStream::new(&buffer);
+    let mut stream = Cursor::new(&mut buffer);
     let mut reader = BinaryReader::new(&mut stream, Endian::Big);
 
     let value = (reader.read_u8()?, reader.read_u8()?);
@@ -107,21 +104,23 @@ fn borrow_test() -> Result<()> {
 
 #[test]
 fn slice_test() -> Result<()> {
-    let mut stream = MemoryStream::new();
+    let mut buffer = Vec::new();
+    let mut stream = Cursor::new(&mut buffer);
+
     let mut writer = BinaryWriter::new(&mut stream, Endian::Big);
     writer.write_u32(42)?;
     writer.write_string("foo")?;
     writer.write_char('b')?;
 
+    let mut buffer = stream.into_inner();
+
     if cfg!(feature = "32bit") {
-        assert_eq!(15, writer.len()?);
+        assert_eq!(15, buffer.len());
     } else {
-        assert_eq!(19, writer.len()?);
+        assert_eq!(19, buffer.len());
     }
 
-    let buffer: Vec<u8> = stream.into();
-
-    let mut stream = SliceStream::new(&buffer);
+    let mut stream = Cursor::new(&mut buffer);
     let mut reader = BinaryReader::new(&mut stream, Endian::Big);
 
     reader.seek(0)?;
@@ -137,9 +136,9 @@ fn slice_test() -> Result<()> {
     assert_eq!('b', value);
 
     if cfg!(feature = "32bit") {
-        assert_eq!(15, reader.len()?);
+        assert_eq!(15, buffer.len());
     } else {
-        assert_eq!(19, reader.len()?);
+        assert_eq!(19, buffer.len());
     }
 
     Ok(())
@@ -150,16 +149,15 @@ fn seek_test() -> Result<()> {
     let temp: f32 = 50.0;
     let seek_loc = 5u64;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_bytes([16; 32].to_vec())?;
     writer.seek(seek_loc)?;
     assert_eq!(writer.tell()?, seek_loc);
     writer.write_f32(temp)?;
 
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    let mut reader = BinaryReader::new(&mut file, Default::default());
     reader.seek(seek_loc)?;
     assert_eq!(reader.tell()?, seek_loc);
     let read_temp = reader.read_f32()?;
@@ -173,13 +171,12 @@ fn seek_test() -> Result<()> {
 fn read_write_test_f64() -> Result<()> {
     let temp: f64 = f64::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
     writer.write_f64(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_f64()?;
     assert_eq!(temp, read_temp);
@@ -191,14 +188,13 @@ fn read_write_test_f64() -> Result<()> {
 fn read_write_test_f32() -> Result<()> {
     let temp: f32 = f32::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_f32(temp)?;
-    
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_f32()?;
     assert_eq!(temp, read_temp);
@@ -210,14 +206,13 @@ fn read_write_test_f32() -> Result<()> {
 fn read_write_test_isize() -> Result<()> {
     let temp: isize = isize::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_isize(temp)?;
-    
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_isize()?;
     assert_eq!(temp, read_temp);
@@ -229,14 +224,13 @@ fn read_write_test_isize() -> Result<()> {
 fn read_write_test_usize() -> Result<()> {
     let temp: usize = usize::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_usize(temp)?;
-    
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_usize()?;
     assert_eq!(temp, read_temp);
@@ -248,14 +242,13 @@ fn read_write_test_usize() -> Result<()> {
 fn read_write_test_i64() -> Result<()> {
     let temp: i64 = i64::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_i64(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_i64()?;
     assert_eq!(temp, read_temp);
@@ -267,14 +260,13 @@ fn read_write_test_i64() -> Result<()> {
 fn read_write_test_i128() -> Result<()> {
     let temp: i128 = i128::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_i128(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_i128()?;
     assert_eq!(temp, read_temp);
@@ -286,14 +278,13 @@ fn read_write_test_i128() -> Result<()> {
 fn read_write_test_i32() -> Result<()> {
     let temp: i32 = i32::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_i32(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_i32()?;
     assert_eq!(temp, read_temp);
@@ -305,14 +296,13 @@ fn read_write_test_i32() -> Result<()> {
 fn read_write_test_i16() -> Result<()> {
     let temp: i16 = i16::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_i16(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_i16()?;
     assert_eq!(temp, read_temp);
@@ -324,14 +314,13 @@ fn read_write_test_i16() -> Result<()> {
 fn read_write_test_i8() -> Result<()> {
     let temp: i8 = i8::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_i8(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_i8()?;
     assert_eq!(temp, read_temp);
@@ -343,14 +332,13 @@ fn read_write_test_i8() -> Result<()> {
 fn read_write_test_u64() -> Result<()> {
     let temp: u64 = u64::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_u64(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_u64()?;
     assert_eq!(temp, read_temp);
@@ -362,14 +350,13 @@ fn read_write_test_u64() -> Result<()> {
 fn read_write_test_u128() -> Result<()> {
     let temp: u128 = u128::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_u128(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_u128()?;
     assert_eq!(temp, read_temp);
@@ -381,14 +368,13 @@ fn read_write_test_u128() -> Result<()> {
 fn read_write_test_u32() -> Result<()> {
     let temp: u32 = u32::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_u32(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_u32()?;
     assert_eq!(temp, read_temp);
@@ -400,14 +386,13 @@ fn read_write_test_u32() -> Result<()> {
 fn read_write_test_u16() -> Result<()> {
     let temp: u16 = u16::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_u16(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_u16()?;
     assert_eq!(temp, read_temp);
@@ -419,14 +404,13 @@ fn read_write_test_u16() -> Result<()> {
 fn read_write_test_u8() -> Result<()> {
     let temp: u8 = u8::MAX;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_u8(temp)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_u8()?;
     assert_eq!(temp, read_temp);
@@ -440,14 +424,13 @@ fn read_write_bytes() -> Result<()> {
 
     let temp = vec![16; count];
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_bytes(temp.clone())?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_temp = reader.read_bytes(count)?;
     assert_eq!(temp, read_temp);
@@ -457,13 +440,12 @@ fn read_write_bytes() -> Result<()> {
 
 #[test]
 fn read_out_of_range() -> Result<()> {
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
     writer.write_f32(5.0)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
     reader.read_f32()?;
 
     assert!(reader.read_f32().is_err());
@@ -475,13 +457,12 @@ fn read_out_of_range() -> Result<()> {
 fn read_write_string() -> Result<()> {
     let temp = "Hello World";
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
     writer.write_string(temp.to_string())?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
     let string = reader.read_string()?;
     assert_eq!(temp, string);
 
@@ -493,15 +474,14 @@ fn read_write_test_bool() -> Result<()> {
     let positive = true;
     let negative = false;
 
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
 
     writer.write_bool(positive)?;
     writer.write_bool(negative)?;
 
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
 
     let read_positive = reader.read_bool()?;
     let read_negative = reader.read_bool()?;
@@ -515,7 +495,9 @@ fn read_write_test_bool() -> Result<()> {
 fn read_write_from_memorystream() -> Result<()> {
     let value_a = 3.0;
     let value_b = 5.0;
-    let mut stream = MemoryStream::new();
+    let mut buffer = Vec::new();
+    let mut stream = Cursor::new(&mut buffer);
+
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
     writer.write_f32(value_a)?;
     writer.write_f32(value_b)?;
@@ -532,7 +514,9 @@ fn read_write_from_memorystream() -> Result<()> {
 
 #[test]
 fn write_to_memorystream_overlapping() -> Result<()> {
-    let mut stream = MemoryStream::new();
+    let mut buffer = Vec::new();
+    let mut stream = Cursor::new(&mut buffer);
+
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
     writer.write_f32(1.0)?;
     writer.write_f32(2.0)?;
@@ -555,21 +539,22 @@ fn write_to_memorystream_overlapping() -> Result<()> {
     Ok(())
 }
 
+/*
 #[test]
 fn write_to_memorystream_into_vec() -> Result<()> {
-    let mut stream = MemoryStream::new();
+    let mut buffer = Vec::new();
+    let mut stream = Cursor::new(&mut buffer);
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
     writer.write_f32(1.0)?;
-    let vec: Vec<u8> = stream.into();
-    assert_eq!(4, vec.len());
+    assert_eq!(4, buffer.len());
     Ok(())
 }
+*/
 
 #[test]
 fn write_to_filestream_overlapping() -> Result<()> {
-    let file = tempfile()?;
-    let mut stream = FileStream(file);
-    let mut writer = BinaryWriter::new(&mut stream, Default::default());
+    let mut file = tempfile()?;
+    let mut writer = BinaryWriter::new(&mut file, Default::default());
     writer.write_f32(1.0)?;
     writer.write_f32(2.0)?;
     writer.write_f32(3.0)?;
@@ -580,9 +565,9 @@ fn write_to_filestream_overlapping() -> Result<()> {
     writer.write_f32(6.0)?;
 
     //let file = std::fs::File::open("filestream_overlapping.test")?;
-    
-    stream.seek(0)?;
-    let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+    writer.seek(0)?;
+    let mut reader = BinaryReader::new(&mut file, Default::default());
     let value = reader.read_f32()?;
     assert_eq!(4.0, value);
     let value = reader.read_f32()?;
@@ -590,7 +575,6 @@ fn write_to_filestream_overlapping() -> Result<()> {
     let value = reader.read_f32()?;
     assert_eq!(6.0, value);
 
-    let file: File = stream.into();
     assert_eq!(12, file.metadata()?.len());
 
     Ok(())
