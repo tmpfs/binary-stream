@@ -12,7 +12,7 @@ impl SeekStream for FileStream {
     }
 
     fn tell(&mut self) -> BinaryResult<u64> {
-        Ok(self.0.seek(SeekFrom::Current(0))?)
+        Ok(self.0.stream_position()?)
     }
 
     fn len(&self) -> BinaryResult<u64> {
