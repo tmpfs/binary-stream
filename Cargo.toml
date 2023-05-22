@@ -12,12 +12,15 @@ readme = "README.md"
 keywords = ["binary", "reader", "writer"]
 license = "MIT"
 
+[features]
+32bit = []
+async-tokio = ["tokio"]
+
 [dependencies]
 thiserror = "1"
+tokio = { version = "1", optional = true, default-features = false, features = ["io-util"] }
 
 [dev-dependencies]
 anyhow = "1"
 tempfile = "3"
-
-[features]
-32bit = []
+tokio = { version = "1", default-features = false, features = ["rt", "macros", "fs"] }

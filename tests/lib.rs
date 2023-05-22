@@ -3,8 +3,8 @@ use binary_stream::{
     BinaryReader, BinaryWriter, Endian, FileStream, MemoryStream, SeekStream,
     SliceStream,
 };
-use tempfile::tempfile;
 use std::fs::File;
+use tempfile::tempfile;
 
 #[test]
 fn borrow_test() -> Result<()> {
@@ -196,7 +196,7 @@ fn read_write_test_f32() -> Result<()> {
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
 
     writer.write_f32(temp)?;
-    
+
     stream.seek(0)?;
     let mut reader = BinaryReader::new(&mut stream, Default::default());
 
@@ -215,7 +215,7 @@ fn read_write_test_isize() -> Result<()> {
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
 
     writer.write_isize(temp)?;
-    
+
     stream.seek(0)?;
     let mut reader = BinaryReader::new(&mut stream, Default::default());
 
@@ -234,7 +234,7 @@ fn read_write_test_usize() -> Result<()> {
     let mut writer = BinaryWriter::new(&mut stream, Default::default());
 
     writer.write_usize(temp)?;
-    
+
     stream.seek(0)?;
     let mut reader = BinaryReader::new(&mut stream, Default::default());
 
@@ -580,7 +580,7 @@ fn write_to_filestream_overlapping() -> Result<()> {
     writer.write_f32(6.0)?;
 
     //let file = std::fs::File::open("filestream_overlapping.test")?;
-    
+
     stream.seek(0)?;
     let mut reader = BinaryReader::new(&mut stream, Default::default());
     let value = reader.read_f32()?;
