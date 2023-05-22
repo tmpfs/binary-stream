@@ -1,7 +1,5 @@
 use anyhow::Result;
-use binary_stream::{
-    BinaryReader, BinaryWriter, Endian,
-};
+use binary_stream::{BinaryReader, BinaryWriter, Endian};
 use std::io::Cursor;
 use tempfile::tempfile;
 

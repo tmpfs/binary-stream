@@ -1,7 +1,7 @@
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
 //! Library for reading and writing binary data.
 //!
-//! An asynchronous version for `tokio` is available using 
+//! An asynchronous version for `tokio` is available using
 //! the `async-tokio` feature.
 //!
 //! Strings are length prefixed using `u64` by default, use
@@ -9,7 +9,7 @@
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
-    io::{Read, Write, Seek, SeekFrom},
+    io::{Read, Seek, SeekFrom, Write},
 };
 
 #[cfg(feature = "async-tokio")]
@@ -60,7 +60,10 @@ impl Default for Endian {
 }
 
 /// Read from a stream.
-pub struct BinaryReader<R> where R: Read + Seek {
+pub struct BinaryReader<R>
+where
+    R: Read + Seek,
+{
     stream: R,
     endian: Endian,
 }
@@ -70,12 +73,12 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn new(stream: R, endian: Endian) -> Self {
         Self { stream, endian }
     }
-    
+
     /// Seek to a position.
     pub fn seek(&mut self, to: u64) -> BinaryResult<u64> {
         Ok(self.stream.seek(SeekFrom::Start(to))?)
     }
-    
+
     /// Get the current seek position.
     pub fn tell(&mut self) -> BinaryResult<u64> {
         Ok(self.stream.stream_position()?)
@@ -233,7 +236,10 @@ impl<R: Read + Seek> BinaryReader<R> {
 }
 
 /// Write to a stream.
-pub struct BinaryWriter<W> where W: Write + Seek {
+pub struct BinaryWriter<W>
+where
+    W: Write + Seek,
+{
     stream: W,
     endian: Endian,
 }
@@ -409,11 +415,17 @@ impl<W: Write + Seek> BinaryWriter<W> {
 /// Trait for encoding to binary.
 pub trait Encode {
     /// Encode self into the binary writer.
-    fn encode<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> BinaryResult<()>;
+    fn encode<W: Write + Seek>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> BinaryResult<()>;
 }
 
 /// Trait for decoding from binary.
 pub trait Decode {
     /// Decode from the binary reader into self.
-    fn decode<R: Read + Seek>(&mut self, reader: &mut BinaryReader<R>) -> BinaryResult<()>;
+    fn decode<R: Read + Seek>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> BinaryResult<()>;
 }
