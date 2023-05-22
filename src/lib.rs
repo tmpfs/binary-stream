@@ -1,3 +1,4 @@
+#![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
 //! Library for reading and writing binary data.
 //!
 //! Strings are length prefixed using `u64` by default, use
