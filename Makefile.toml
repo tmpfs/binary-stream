@@ -46,7 +46,7 @@ args = ["doc", "--open", "--no-deps"]
 
 [tasks.unit]
 command = "cargo"
-args = ["test", "--lib", "--", "--nocapture"]
+args = ["test", "--lib", "--all-features", "--", "--nocapture"]
 
 [tasks.test]
 dependencies = ["unit"]
