@@ -39,6 +39,15 @@ impl<R: AsyncReadExt + AsyncSeek + Unpin> BinaryReader<R> {
         Ok(self.stream.stream_position().await?)
     }
 
+    /// Get the length of this stream by seeking to the end
+    /// and then restoring the previous cursor position.
+    pub async fn len(&mut self) -> BinaryResult<u64> {
+        let position = self.tell().await?;
+        let length = self.stream.seek(SeekFrom::End(0)).await?;
+        self.seek(position).await?;
+        Ok(length)
+    }
+
     /// Read a length-prefixed `String` from the stream.
     pub async fn read_string(&mut self) -> BinaryResult<String> {
         let chars = if cfg!(feature = "32bit") {
@@ -207,6 +216,25 @@ impl<W: AsyncWriteExt + AsyncSeek + Unpin> BinaryWriter<W> {
     /// Create a binary writer with the given endianness.
     pub fn new(stream: W, endian: Endian) -> Self {
         Self { stream, endian }
+    }
+
+    /// Seek to a position.
+    pub async fn seek(&mut self, to: u64) -> BinaryResult<u64> {
+        Ok(self.stream.seek(SeekFrom::Start(to)).await?)
+    }
+
+    /// Get the current position.
+    pub async fn tell(&mut self) -> BinaryResult<u64> {
+        Ok(self.stream.stream_position().await?)
+    }
+
+    /// Get the length of this stream by seeking to the end
+    /// and then restoring the previous cursor position.
+    pub async fn len(&mut self) -> BinaryResult<u64> {
+        let position = self.tell().await?;
+        let length = self.stream.seek(SeekFrom::End(0)).await?;
+        self.seek(position).await?;
+        Ok(length)
     }
 
     /// Write a length-prefixed `String` to the stream.

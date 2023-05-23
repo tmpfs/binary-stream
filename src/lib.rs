@@ -84,6 +84,15 @@ impl<R: Read + Seek> BinaryReader<R> {
         Ok(self.stream.stream_position()?)
     }
 
+    /// Get the length of this stream by seeking to the end
+    /// and then restoring the previous cursor position.
+    pub fn len(&mut self) -> BinaryResult<u64> {
+        let position = self.tell()?;
+        let length = self.stream.seek(SeekFrom::End(0))?;
+        self.seek(position)?;
+        Ok(length)
+    }
+
     /// Read a length-prefixed `String` from the stream.
     pub fn read_string(&mut self) -> BinaryResult<String> {
         let chars = if cfg!(feature = "32bit") {
@@ -258,6 +267,15 @@ impl<W: Write + Seek> BinaryWriter<W> {
     /// Get the current seek position.
     pub fn tell(&mut self) -> BinaryResult<u64> {
         Ok(self.stream.stream_position()?)
+    }
+
+    /// Get the length of this stream by seeking to the end
+    /// and then restoring the previous cursor position.
+    pub fn len(&mut self) -> BinaryResult<u64> {
+        let position = self.tell()?;
+        let length = self.stream.seek(SeekFrom::End(0))?;
+        self.seek(position)?;
+        Ok(length)
     }
 
     /// Write a length-prefixed `String` to the stream.
