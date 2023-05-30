@@ -391,6 +391,28 @@ impl<W: AsyncWriteExt + AsyncSeek + Unpin> BinaryWriter<W> {
     }
 }
 
+/// Trait for encoding to binary.
+#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+pub trait Encode {
+    /// Encode self into the binary writer.
+    async fn encode<W: AsyncWriteExt + AsyncSeek + Unpin + Send>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> BinaryResult<()>;
+}
+
+/// Trait for decoding from binary.
+#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+pub trait Decode {
+    /// Decode from the binary reader into self.
+    async fn decode<R: AsyncReadExt + AsyncSeek + Unpin + Send>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> BinaryResult<()>;
+}
+
 #[cfg(test)]
 mod test {
     use super::{BinaryReader, BinaryWriter};
@@ -419,27 +441,4 @@ mod test {
 
         Ok(())
     }
-}
-
-
-/// Trait for encoding to binary.
-#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait Encode {
-    /// Encode self into the binary writer.
-    async fn encode<W: AsyncWriteExt + AsyncSeek + Unpin>(
-        &self,
-        writer: &mut BinaryWriter<W>,
-    ) -> BinaryResult<()>;
-}
-
-/// Trait for decoding from binary.
-#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait Decode {
-    /// Decode from the binary reader into self.
-    async fn decode<R: AsyncReadExt + AsyncSeek + Unpin>(
-        &mut self,
-        reader: &mut BinaryReader<R>,
-    ) -> BinaryResult<()>;
 }
