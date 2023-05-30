@@ -2,7 +2,7 @@
 //! Library for reading and writing binary data.
 //!
 //! An asynchronous version for `tokio` is available using
-//! the `async-tokio` feature.
+//! the `tokio` feature.
 //!
 //! Strings are length prefixed using `u64` by default, use
 //! the `32bit` feature to use `u32` for the string length prefix.

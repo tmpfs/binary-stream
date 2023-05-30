@@ -14,7 +14,7 @@ license = "MIT"
 
 [features]
 32bit = []
-async-tokio = ["tokio", "async-trait"]
+tokio = ["dep:tokio", "dep:async-trait"]
 
 [dependencies]
 thiserror = "1"
