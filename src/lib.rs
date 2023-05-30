@@ -12,7 +12,7 @@ use std::{
     io::{Read, Seek, SeekFrom, Write},
 };
 
-#[cfg(feature = "async-tokio")]
+#[cfg(feature = "tokio")]
 pub mod tokio;
 
 mod error;
