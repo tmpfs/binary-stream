@@ -4,7 +4,10 @@ use std::{
     borrow::Borrow,
     io::{Error, ErrorKind, Result, SeekFrom},
 };
-use tokio::io::{AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWriteExt};
+use tokio::io::{
+    AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
+    AsyncWriteExt,
+};
 
 use crate::{decode_endian, Endian};
 
@@ -21,13 +24,13 @@ macro_rules! encode_endian {
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
-    R: AsyncReadExt + AsyncSeek + Unpin + Send,
+    R: AsyncRead + AsyncSeek + Unpin,
 {
     stream: R,
     endian: Endian,
 }
 
-impl<R: AsyncReadExt + AsyncSeek + Unpin + Send> BinaryReader<R> {
+impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     /// Create a binary reader with the given endianness.
     pub fn new(stream: R, endian: Endian) -> Self {
         Self { stream, endian }
@@ -208,13 +211,13 @@ impl<R: AsyncReadExt + AsyncSeek + Unpin + Send> BinaryReader<R> {
 /// Write to a stream.
 pub struct BinaryWriter<W>
 where
-    W: AsyncWriteExt + AsyncSeek + Unpin + Send,
+    W: AsyncWrite + AsyncSeek + Unpin,
 {
     stream: W,
     endian: Endian,
 }
 
-impl<W: AsyncWriteExt + AsyncSeek + Unpin + Send> BinaryWriter<W> {
+impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     /// Create a binary writer with the given endianness.
     pub fn new(stream: W, endian: Endian) -> Self {
         Self { stream, endian }
@@ -397,7 +400,7 @@ impl<W: AsyncWriteExt + AsyncSeek + Unpin + Send> BinaryWriter<W> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Encode {
     /// Encode self into the binary writer.
-    async fn encode<W: AsyncWriteExt + AsyncSeek + Unpin + Send>(
+    async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
         &self,
         writer: &mut BinaryWriter<W>,
     ) -> Result<()>;
@@ -408,7 +411,7 @@ pub trait Encode {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Decode {
     /// Decode from the binary reader into self.
-    async fn decode<R: AsyncReadExt + AsyncSeek + Unpin + Send>(
+    async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
         &mut self,
         reader: &mut BinaryReader<R>,
     ) -> Result<()>;
