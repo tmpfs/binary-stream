@@ -21,13 +21,13 @@ macro_rules! encode_endian {
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
-    R: AsyncReadExt + AsyncSeek + Unpin,
+    R: AsyncReadExt + AsyncSeek + Unpin + Send,
 {
     stream: R,
     endian: Endian,
 }
 
-impl<R: AsyncReadExt + AsyncSeek + Unpin> BinaryReader<R> {
+impl<R: AsyncReadExt + AsyncSeek + Unpin + Send> BinaryReader<R> {
     /// Create a binary reader with the given endianness.
     pub fn new(stream: R, endian: Endian) -> Self {
         Self { stream, endian }
@@ -208,13 +208,13 @@ impl<R: AsyncReadExt + AsyncSeek + Unpin> BinaryReader<R> {
 /// Write to a stream.
 pub struct BinaryWriter<W>
 where
-    W: AsyncWriteExt + AsyncSeek + Unpin,
+    W: AsyncWriteExt + AsyncSeek + Unpin + Send,
 {
     stream: W,
     endian: Endian,
 }
 
-impl<W: AsyncWriteExt + AsyncSeek + Unpin> BinaryWriter<W> {
+impl<W: AsyncWriteExt + AsyncSeek + Unpin + Send> BinaryWriter<W> {
     /// Create a binary writer with the given endianness.
     pub fn new(stream: W, endian: Endian) -> Self {
         Self { stream, endian }
