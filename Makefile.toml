@@ -40,9 +40,10 @@ args = ["clippy"]
 command = "cargo"
 args = ["clean"]
 
-[tasks.docs]
+[tasks.doc]
+toolchain = "nightly"
 command = "cargo"
-args = ["doc", "--open", "--no-deps"]
+args = ["doc", "--open", "--no-deps", "--all-features"]
 
 [tasks.unit]
 command = "cargo"
