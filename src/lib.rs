@@ -35,7 +35,24 @@ macro_rules! decode_endian {
     };
 }
 
+macro_rules! guard_size {
+    ($len:expr, $max:expr) => {
+        if let Some(max) = $max {
+            if $len as usize > max {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!(
+                        "length {} exceeds max buffer size {}",
+                        $len, max
+                    ),
+                ));
+            }
+        }
+    };
+}
+
 pub(crate) use decode_endian;
+pub(crate) use guard_size;
 
 /// Variants to describe endianness.
 pub enum Endian {
@@ -54,7 +71,7 @@ impl Default for Endian {
 /// Options for reading and writing.
 #[derive(Default)]
 pub struct Options {
-    /// The endian type. 
+    /// The endian type.
     pub endian: Endian,
     /// Maximum buffer size for strings and byte slices.
     pub max_buffer_size: Option<usize>,
@@ -65,7 +82,7 @@ impl From<Endian> for Options {
         Self {
             endian,
             max_buffer_size: None,
-        } 
+        }
     }
 }
 
@@ -107,11 +124,13 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_string(&mut self) -> Result<String> {
         let chars = if cfg!(feature = "32bit") {
             let str_len = self.read_u32()?;
+            guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
             chars
         } else {
             let str_len = self.read_u64()?;
+            guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
             chars
@@ -250,6 +269,7 @@ impl<R: Read + Seek> BinaryReader<R> {
 
     /// Read bytes from the stream into a buffer.
     pub fn read_bytes(&mut self, length: usize) -> Result<Vec<u8>> {
+        guard_size!(length, self.options.max_buffer_size);
         let mut buffer: Vec<u8> = vec![0; length];
         self.stream.read_exact(&mut buffer)?;
         Ok(buffer)
@@ -293,6 +313,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
     /// Write a length-prefixed `String` to the stream.
     pub fn write_string<S: AsRef<str>>(&mut self, value: S) -> Result<usize> {
         let bytes = value.as_ref().as_bytes();
+        guard_size!(bytes.len(), self.options.max_buffer_size);
         if cfg!(feature = "32bit") {
             self.write_u32(bytes.len() as u32)?;
         } else {
@@ -390,6 +411,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
 
     /// Write a byte buffer to the stream.
     pub fn write_bytes<B: AsRef<[u8]>>(&mut self, data: B) -> Result<usize> {
+        guard_size!(data.as_ref().len(), self.options.max_buffer_size);
         Ok(self.stream.write(data.as_ref())?)
     }
 }
@@ -414,8 +436,8 @@ pub trait Decode {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
     use super::{BinaryReader, BinaryWriter};
+    use anyhow::Result;
     use std::io::Cursor;
     use tempfile::tempfile;
 

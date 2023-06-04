@@ -59,11 +59,13 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_string(&mut self) -> Result<String> {
         let chars = if cfg!(feature = "32bit") {
             let str_len = self.read_u32().await?;
+            guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars).await?;
             chars
         } else {
             let str_len = self.read_u64().await?;
+            guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars).await?;
             chars
@@ -202,6 +204,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
 
     /// Read bytes from the stream into a buffer.
     pub async fn read_bytes(&mut self, length: usize) -> Result<Vec<u8>> {
+        guard_size!(length, self.options.max_buffer_size);
         let mut buffer: Vec<u8> = vec![0; length];
         self.stream.read_exact(&mut buffer).await?;
         Ok(buffer)
@@ -248,6 +251,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         value: S,
     ) -> Result<usize> {
         let bytes = value.as_ref().as_bytes();
+        guard_size!(bytes.len(), self.options.max_buffer_size);
         if cfg!(feature = "32bit") {
             self.write_u32(bytes.len() as u32).await?;
         } else {
@@ -391,6 +395,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         data: B,
     ) -> Result<usize> {
+        guard_size!(data.as_ref().len(), self.options.max_buffer_size);
         Ok(self.stream.write(data.as_ref()).await?)
     }
 }
@@ -429,13 +434,15 @@ mod test {
 
         let mut write_file =
             tokio::fs::File::create("target/async-tokio.test").await?;
-        let mut writer = BinaryWriter::new(&mut write_file, Default::default());
+        let mut writer =
+            BinaryWriter::new(&mut write_file, Default::default());
         writer.write_string(&mock_str).await?;
         writer.write_char(&mock_char).await?;
 
         let mut read_file =
             tokio::fs::File::open("target/async-tokio.test").await?;
-        let mut reader = BinaryReader::new(&mut read_file, Default::default());
+        let mut reader =
+            BinaryReader::new(&mut read_file, Default::default());
 
         let str_value = reader.read_string().await?;
         assert_eq!(mock_str, str_value);
