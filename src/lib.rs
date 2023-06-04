@@ -35,7 +35,6 @@ macro_rules! decode_endian {
     };
 }
 
-//pub(crate) use encode_endian;
 pub(crate) use decode_endian;
 
 /// Variants to describe endianness.
@@ -61,19 +60,28 @@ pub struct Options {
     pub max_buffer_size: Option<usize>,
 }
 
+impl From<Endian> for Options {
+    fn from(endian: Endian) -> Self {
+        Self {
+            endian,
+            max_buffer_size: None,
+        } 
+    }
+}
+
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
     R: Read + Seek,
 {
     stream: R,
-    endian: Endian,
+    options: Options,
 }
 
 impl<R: Read + Seek> BinaryReader<R> {
-    /// Create a binary reader with the given endianness.
-    pub fn new(stream: R, endian: Endian) -> Self {
-        Self { stream, endian }
+    /// Create a binary reader with the given options.
+    pub fn new(stream: R, options: Options) -> Self {
+        Self { stream, options }
     }
 
     /// Seek to a position.
@@ -128,14 +136,14 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_f32(&mut self) -> Result<f32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, f32);
+        decode_endian!(self.options.endian, buffer, f32);
     }
 
     /// Read a `f64` from the stream.
     pub fn read_f64(&mut self) -> Result<f64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, f64);
+        decode_endian!(self.options.endian, buffer, f64);
     }
 
     /// Read an `isize` from the stream.
@@ -143,7 +151,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_isize(&mut self) -> Result<isize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, isize);
+        decode_endian!(self.options.endian, buffer, isize);
     }
 
     /// Read an `isize` from the stream.
@@ -151,7 +159,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_isize(&mut self) -> Result<isize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, isize);
+        decode_endian!(self.options.endian, buffer, isize);
     }
 
     /// Read a `usize` from the stream.
@@ -159,7 +167,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_usize(&mut self) -> Result<usize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, usize);
+        decode_endian!(self.options.endian, buffer, usize);
     }
 
     /// Read a `usize` from the stream.
@@ -167,77 +175,77 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn read_usize(&mut self) -> Result<usize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, usize);
+        decode_endian!(self.options.endian, buffer, usize);
     }
 
     /// Read a `u64` from the stream.
     pub fn read_u64(&mut self) -> Result<u64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, u64);
+        decode_endian!(self.options.endian, buffer, u64);
     }
 
     /// Read an `i64` from the stream.
     pub fn read_i64(&mut self) -> Result<i64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, i64);
+        decode_endian!(self.options.endian, buffer, i64);
     }
 
     /// Read a `u128` from the stream.
     pub fn read_u128(&mut self) -> Result<u128> {
         let mut buffer: [u8; 16] = [0; 16];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, u128);
+        decode_endian!(self.options.endian, buffer, u128);
     }
 
     /// Read an `i128` from the stream.
     pub fn read_i128(&mut self) -> Result<i128> {
         let mut buffer: [u8; 16] = [0; 16];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, i128);
+        decode_endian!(self.options.endian, buffer, i128);
     }
 
     /// Read a `u32` from the stream.
     pub fn read_u32(&mut self) -> Result<u32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, u32);
+        decode_endian!(self.options.endian, buffer, u32);
     }
 
     /// Read an `i32` from the stream.
     pub fn read_i32(&mut self) -> Result<i32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, i32);
+        decode_endian!(self.options.endian, buffer, i32);
     }
 
     /// Read a `u16` from the stream.
     pub fn read_u16(&mut self) -> Result<u16> {
         let mut buffer: [u8; 2] = [0; 2];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, u16);
+        decode_endian!(self.options.endian, buffer, u16);
     }
 
     /// Read an `i16` from the stream.
     pub fn read_i16(&mut self) -> Result<i16> {
         let mut buffer: [u8; 2] = [0; 2];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, i16);
+        decode_endian!(self.options.endian, buffer, i16);
     }
 
     /// Read a `u8` from the stream.
     pub fn read_u8(&mut self) -> Result<u8> {
         let mut buffer: [u8; 1] = [0; 1];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, u8);
+        decode_endian!(self.options.endian, buffer, u8);
     }
 
     /// Read an `i8` from the stream.
     pub fn read_i8(&mut self) -> Result<i8> {
         let mut buffer: [u8; 1] = [0; 1];
         self.stream.read_exact(&mut buffer)?;
-        decode_endian!(self.endian, buffer, i8);
+        decode_endian!(self.options.endian, buffer, i8);
     }
 
     /// Read bytes from the stream into a buffer.
@@ -254,13 +262,13 @@ where
     W: Write + Seek,
 {
     stream: W,
-    endian: Endian,
+    options: Options,
 }
 
 impl<W: Write + Seek> BinaryWriter<W> {
-    /// Create a binary writer with the given endianness.
-    pub fn new(stream: W, endian: Endian) -> Self {
-        Self { stream, endian }
+    /// Create a binary writer with the given options.
+    pub fn new(stream: W, options: Options) -> Self {
+        Self { stream, options }
     }
 
     /// Seek to a position.
@@ -306,12 +314,12 @@ impl<W: Write + Seek> BinaryWriter<W> {
 
     /// Write a `f32` to the stream.
     pub fn write_f32<V: Borrow<f32>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `f64` to the stream.
     pub fn write_f64<V: Borrow<f64>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `isize` to the stream.
@@ -319,7 +327,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `usize` to the stream.
@@ -327,57 +335,57 @@ impl<W: Write + Seek> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u64` to the stream.
     pub fn write_u64<V: Borrow<u64>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i64` to the stream.
     pub fn write_i64<V: Borrow<i64>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u128` to the stream.
     pub fn write_u128<V: Borrow<u128>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i128` to the stream.
     pub fn write_i128<V: Borrow<i128>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u32` to the stream.
     pub fn write_u32<V: Borrow<u32>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i32` to the stream.
     pub fn write_i32<V: Borrow<i32>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u16` to the stream.
     pub fn write_u16<V: Borrow<u16>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i16` to the stream.
     pub fn write_i16<V: Borrow<i16>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u8` to the stream.
     pub fn write_u8<V: Borrow<u8>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i8` to the stream.
     pub fn write_i8<V: Borrow<i8>>(&mut self, value: V) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a byte buffer to the stream.
@@ -407,7 +415,7 @@ pub trait Decode {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use super::{BinaryReader, BinaryWriter, Endian};
+    use super::{BinaryReader, BinaryWriter};
     use std::io::Cursor;
     use tempfile::tempfile;
 
@@ -416,7 +424,7 @@ mod tests {
         let mut buffer = Vec::new();
         let stream = Cursor::new(&mut buffer);
 
-        let mut writer = BinaryWriter::new(stream, Endian::Big);
+        let mut writer = BinaryWriter::new(stream, Default::default());
         writer.write_u8(8)?;
         writer.write_u8(&8)?;
         writer.write_i8(-8)?;
@@ -463,7 +471,7 @@ mod tests {
         writer.write_bytes(buf)?;
 
         let mut stream = Cursor::new(&mut buffer);
-        let mut reader = BinaryReader::new(&mut stream, Endian::Big);
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
 
         let value = (reader.read_u8()?, reader.read_u8()?);
         assert_eq!((8, 8), value);
@@ -515,7 +523,7 @@ mod tests {
         let mut buffer = Vec::new();
         let mut stream = Cursor::new(&mut buffer);
 
-        let mut writer = BinaryWriter::new(&mut stream, Endian::Big);
+        let mut writer = BinaryWriter::new(&mut stream, Default::default());
         writer.write_u32(42)?;
         writer.write_string("foo")?;
         writer.write_char('b')?;
@@ -529,7 +537,7 @@ mod tests {
         }
 
         let mut stream = Cursor::new(&mut buffer);
-        let mut reader = BinaryReader::new(&mut stream, Endian::Big);
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
 
         reader.seek(0)?;
         let value = reader.read_u32()?;

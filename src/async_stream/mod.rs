@@ -9,7 +9,7 @@ use tokio::io::{
     AsyncWriteExt,
 };
 
-use crate::{decode_endian, Endian};
+use crate::{decode_endian, Endian, Options};
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {
@@ -27,13 +27,13 @@ where
     R: AsyncRead + AsyncSeek + Unpin,
 {
     stream: R,
-    endian: Endian,
+    options: Options,
 }
 
 impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
-    /// Create a binary reader with the given endianness.
-    pub fn new(stream: R, endian: Endian) -> Self {
-        Self { stream, endian }
+    /// Create a binary reader with the given options.
+    pub fn new(stream: R, options: Options) -> Self {
+        Self { stream, options }
     }
 
     /// Seek to a position.
@@ -88,14 +88,14 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_f32(&mut self) -> Result<f32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, f32);
+        decode_endian!(self.options.endian, buffer, f32);
     }
 
     /// Read a `f64` from the stream.
     pub async fn read_f64(&mut self) -> Result<f64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, f64);
+        decode_endian!(self.options.endian, buffer, f64);
     }
 
     /// Read an `isize` from the stream.
@@ -103,7 +103,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_isize(&mut self) -> Result<isize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, isize);
+        decode_endian!(self.options.endian, buffer, isize);
     }
 
     /// Read an `isize` from the stream.
@@ -111,7 +111,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_isize(&mut self) -> Result<isize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, isize);
+        decode_endian!(self.options.endian, buffer, isize);
     }
 
     /// Read a `usize` from the stream.
@@ -119,7 +119,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_usize(&mut self) -> Result<usize> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, usize);
+        decode_endian!(self.options.endian, buffer, usize);
     }
 
     /// Read a `usize` from the stream.
@@ -127,77 +127,77 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn read_usize(&mut self) -> Result<usize> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, usize);
+        decode_endian!(self.options.endian, buffer, usize);
     }
 
     /// Read a `u64` from the stream.
     pub async fn read_u64(&mut self) -> Result<u64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, u64);
+        decode_endian!(self.options.endian, buffer, u64);
     }
 
     /// Read an `i64` from the stream.
     pub async fn read_i64(&mut self) -> Result<i64> {
         let mut buffer: [u8; 8] = [0; 8];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, i64);
+        decode_endian!(self.options.endian, buffer, i64);
     }
 
     /// Read a `u128` from the stream.
     pub async fn read_u128(&mut self) -> Result<u128> {
         let mut buffer: [u8; 16] = [0; 16];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, u128);
+        decode_endian!(self.options.endian, buffer, u128);
     }
 
     /// Read an `i128` from the stream.
     pub async fn read_i128(&mut self) -> Result<i128> {
         let mut buffer: [u8; 16] = [0; 16];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, i128);
+        decode_endian!(self.options.endian, buffer, i128);
     }
 
     /// Read a `u32` from the stream.
     pub async fn read_u32(&mut self) -> Result<u32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, u32);
+        decode_endian!(self.options.endian, buffer, u32);
     }
 
     /// Read an `i32` from the stream.
     pub async fn read_i32(&mut self) -> Result<i32> {
         let mut buffer: [u8; 4] = [0; 4];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, i32);
+        decode_endian!(self.options.endian, buffer, i32);
     }
 
     /// Read a `u16` from the stream.
     pub async fn read_u16(&mut self) -> Result<u16> {
         let mut buffer: [u8; 2] = [0; 2];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, u16);
+        decode_endian!(self.options.endian, buffer, u16);
     }
 
     /// Read an `i16` from the stream.
     pub async fn read_i16(&mut self) -> Result<i16> {
         let mut buffer: [u8; 2] = [0; 2];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, i16);
+        decode_endian!(self.options.endian, buffer, i16);
     }
 
     /// Read a `u8` from the stream.
     pub async fn read_u8(&mut self) -> Result<u8> {
         let mut buffer: [u8; 1] = [0; 1];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, u8);
+        decode_endian!(self.options.endian, buffer, u8);
     }
 
     /// Read an `i8` from the stream.
     pub async fn read_i8(&mut self) -> Result<i8> {
         let mut buffer: [u8; 1] = [0; 1];
         self.stream.read_exact(&mut buffer).await?;
-        decode_endian!(self.endian, buffer, i8);
+        decode_endian!(self.options.endian, buffer, i8);
     }
 
     /// Read bytes from the stream into a buffer.
@@ -214,13 +214,13 @@ where
     W: AsyncWrite + AsyncSeek + Unpin,
 {
     stream: W,
-    endian: Endian,
+    options: Options,
 }
 
 impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
-    /// Create a binary writer with the given endianness.
-    pub fn new(stream: W, endian: Endian) -> Self {
-        Self { stream, endian }
+    /// Create a binary writer with the given options.
+    pub fn new(stream: W, options: Options) -> Self {
+        Self { stream, options }
     }
 
     /// Seek to a position.
@@ -279,7 +279,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `f64` to the stream.
@@ -287,7 +287,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `isize` to the stream.
@@ -295,7 +295,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `usize` to the stream.
@@ -303,7 +303,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u64` to the stream.
@@ -311,7 +311,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i64` to the stream.
@@ -319,7 +319,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u128` to the stream.
@@ -327,7 +327,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i128` to the stream.
@@ -335,7 +335,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u32` to the stream.
@@ -343,7 +343,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i32` to the stream.
@@ -351,7 +351,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u16` to the stream.
@@ -359,7 +359,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i16` to the stream.
@@ -367,7 +367,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a `u8` to the stream.
@@ -375,7 +375,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write an `i8` to the stream.
@@ -383,7 +383,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         &mut self,
         value: V,
     ) -> Result<usize> {
-        encode_endian!(self.endian, value.borrow(), self.stream);
+        encode_endian!(self.options.endian, value.borrow(), self.stream);
     }
 
     /// Write a byte buffer to the stream.
@@ -420,7 +420,6 @@ pub trait Decode {
 #[cfg(test)]
 mod test {
     use super::{BinaryReader, BinaryWriter};
-    use crate::Endian;
     use anyhow::Result;
 
     #[tokio::test]
@@ -430,13 +429,13 @@ mod test {
 
         let mut write_file =
             tokio::fs::File::create("target/async-tokio.test").await?;
-        let mut writer = BinaryWriter::new(&mut write_file, Endian::Little);
+        let mut writer = BinaryWriter::new(&mut write_file, Default::default());
         writer.write_string(&mock_str).await?;
         writer.write_char(&mock_char).await?;
 
         let mut read_file =
             tokio::fs::File::open("target/async-tokio.test").await?;
-        let mut reader = BinaryReader::new(&mut read_file, Endian::Little);
+        let mut reader = BinaryReader::new(&mut read_file, Default::default());
 
         let str_value = reader.read_string().await?;
         assert_eq!(mock_str, str_value);
