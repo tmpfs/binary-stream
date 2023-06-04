@@ -52,6 +52,14 @@ impl Default for Endian {
     }
 }
 
+/// Options for reading and writing.
+pub struct Options {
+    /// The endian type. 
+    pub endian: Endian,
+    /// Maximum buffer size for strings and byte slices.
+    pub max_buffer_size: Option<usize>,
+}
+
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
