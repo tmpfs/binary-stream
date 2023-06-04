@@ -1,6 +1,6 @@
 [package]
 name = "binary-stream"
-version = "5.1.0"
+version = "6.0.0"
 authors = [
   "Mathias Danielsen <mathiasda98@hotmail.com>",
   "Muji <muji@tmpfs.org>"
@@ -14,7 +14,7 @@ license = "MIT"
 
 [features]
 32bit = []
-tokio = ["dep:tokio", "dep:async-trait"]
+async = ["dep:tokio", "dep:async-trait"]
 
 [dependencies]
 tokio = { version = "1", optional = true, default-features = false, features = ["io-util"] }
@@ -22,7 +22,7 @@ async-trait = { version = "0.1", optional = true }
 
 [dev-dependencies]
 anyhow = "1"
-tempfile = "3"
+tempfile = "3.5"
 tokio = { version = "1", default-features = false, features = ["rt", "macros", "fs"] }
 
 [build-dependencies]
