@@ -57,14 +57,14 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
 
     /// Read a length-prefixed `String` from the stream.
     pub async fn read_string(&mut self) -> Result<String> {
-        let chars = if cfg!(feature = "32bit") {
-            let str_len = self.read_u32().await?;
+        let chars = if cfg!(feature = "64bit") {
+            let str_len = self.read_u64().await?;
             guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars).await?;
             chars
         } else {
-            let str_len = self.read_u64().await?;
+            let str_len = self.read_u32().await?;
             guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars).await?;
@@ -252,10 +252,10 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     ) -> Result<usize> {
         let bytes = value.as_ref().as_bytes();
         guard_size!(bytes.len(), self.options.max_buffer_size);
-        if cfg!(feature = "32bit") {
-            self.write_u32(bytes.len() as u32).await?;
-        } else {
+        if cfg!(feature = "64bit") {
             self.write_u64(bytes.len() as u64).await?;
+        } else {
+            self.write_u32(bytes.len() as u32).await?;
         }
         Ok(self.stream.write(bytes).await?)
     }

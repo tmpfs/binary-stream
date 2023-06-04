@@ -13,12 +13,11 @@ keywords = ["binary", "reader", "writer"]
 license = "MIT"
 
 [features]
-32bit = []
+64bit = []
 async = ["dep:futures", "dep:async-trait"]
 
 [dependencies]
 futures = { version = "0.3", optional = true }
-#tokio = { version = "1", optional = true, default-features = false, features = ["io-util"] }
 async-trait = { version = "0.1", optional = true }
 
 [dev-dependencies]
