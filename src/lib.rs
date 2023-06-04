@@ -48,11 +48,12 @@ pub enum Endian {
 
 impl Default for Endian {
     fn default() -> Self {
-        Self::Big
+        Self::Little
     }
 }
 
 /// Options for reading and writing.
+#[derive(Default)]
 pub struct Options {
     /// The endian type. 
     pub endian: Endian,
