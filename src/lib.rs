@@ -1,8 +1,7 @@
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
-//! Library for reading and writing binary data.
+//! Read and write binary data to streams.
 //!
-//! An asynchronous version for `tokio` is available using
-//! the `async` feature.
+//! An asynchronous version using [futures::io](https://docs.rs/futures/latest/futures/io/index.html) is available using the `async` feature.
 //!
 //! Strings are length prefixed using `u64` by default, use
 //! the `32bit` feature to use `u32` for the string length prefix.
@@ -13,7 +12,7 @@ use std::{
 };
 
 #[cfg(feature = "async")]
-pub mod async_stream;
+pub mod futures;
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {

@@ -40,7 +40,7 @@ COVERAGE_OUTPUT_LCOV="${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/lcov.info
 condition = { rust_version = { min = "1.60.0" } }
 private=true
 command = "cargo"
-args = ["build"]
+args = ["build", "--all-features"]
 
 [tasks.coverage_grcov_build_stable.env]
 "CARGO_BUILD_TARGET_DIR"="${COVERAGE_TARGET_DIRECTORY}"
@@ -51,7 +51,7 @@ args = ["build"]
 condition = { rust_version = { min = "1.60.0" } }
 private=true
 command = "cargo"
-args = ["test", "--all"]
+args = ["test", "--all-features"]
 
 [tasks.coverage_grcov_run_test_stable.env]
 "CARGO_BUILD_TARGET_DIR"="${COVERAGE_TARGET_DIRECTORY}"

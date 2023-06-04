@@ -1,12 +1,12 @@
 //! Asynchronous reader and writer for tokio.
 use async_trait::async_trait;
+use futures::io::{
+    AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
+    AsyncWriteExt,
+};
 use std::{
     borrow::Borrow,
     io::{Error, ErrorKind, Result, SeekFrom},
-};
-use tokio::io::{
-    AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
-    AsyncWriteExt,
 };
 
 use crate::{decode_endian, guard_size, Endian, Options};
@@ -398,6 +398,11 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
         guard_size!(data.as_ref().len(), self.options.max_buffer_size);
         Ok(self.stream.write(data.as_ref()).await?)
     }
+
+    /// Flush the write buffer.
+    pub async fn flush(&mut self) -> Result<()> {
+        self.stream.flush().await
+    }
 }
 
 /// Trait for encoding to binary.
@@ -426,21 +431,27 @@ pub trait Decode {
 mod test {
     use super::{BinaryReader, BinaryWriter};
     use anyhow::Result;
-
+    use futures::io::{BufReader, BufWriter, Cursor};
+    use tokio_util::compat::{
+        TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
+    };
     #[tokio::test]
-    async fn async_tokio() -> Result<()> {
-        let mock_str = String::from("mock value");
+    async fn async_tokio_file() -> Result<()> {
+        let mock_str = "mock value".to_string();
         let mock_char = 'c';
 
-        let mut write_file =
+        let write_file =
             tokio::fs::File::create("target/async-tokio.test").await?;
+        let mut write_file = write_file.compat_write();
         let mut writer =
             BinaryWriter::new(&mut write_file, Default::default());
         writer.write_string(&mock_str).await?;
         writer.write_char(&mock_char).await?;
+        writer.flush().await?;
 
-        let mut read_file =
+        let read_file =
             tokio::fs::File::open("target/async-tokio.test").await?;
+        let mut read_file = read_file.compat();
         let mut reader =
             BinaryReader::new(&mut read_file, Default::default());
 
@@ -448,6 +459,88 @@ mod test {
         assert_eq!(mock_str, str_value);
         let char_value = reader.read_char().await?;
         assert_eq!(mock_char, char_value);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn async_tokio_memory() -> Result<()> {
+        let mut buffer = Vec::new();
+        let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+        let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+        let u_8 = 8u8;
+        let u_16 = 16u16;
+        let u_32 = 32u32;
+        let u_64 = 64u64;
+        let u_128 = 128u128;
+        let u_size = 256usize;
+
+        let i_8 = 8i8;
+        let i_16 = 16i16;
+        let i_32 = 32i32;
+        let i_64 = 64i64;
+        let i_128 = 128i128;
+        let i_size = 256isize;
+
+        let mock_str = "mock value".to_string();
+        let mock_char = 'c';
+        let mock_true = true;
+        let mock_false = false;
+
+        let f_32 = 3.14f32;
+        let f_64 = 3.14f64;
+
+        writer.write_u8(u_8).await?;
+        writer.write_u16(u_16).await?;
+        writer.write_u32(u_32).await?;
+        writer.write_u64(u_64).await?;
+        writer.write_u128(u_128).await?;
+        writer.write_usize(u_size).await?;
+
+        writer.write_i8(i_8).await?;
+        writer.write_i16(i_16).await?;
+        writer.write_i32(i_32).await?;
+        writer.write_i64(i_64).await?;
+        writer.write_i128(i_128).await?;
+        writer.write_isize(i_size).await?;
+
+        writer.write_string(&mock_str).await?;
+        writer.write_char(mock_char).await?;
+
+        writer.write_bool(mock_true).await?;
+        writer.write_bool(mock_false).await?;
+
+        writer.write_f32(f_32).await?;
+        writer.write_f64(f_64).await?;
+
+        writer.flush().await?;
+
+        let mut stream = BufReader::new(Cursor::new(&mut buffer));
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+        assert_eq!(u_8, reader.read_u8().await?);
+        assert_eq!(u_16, reader.read_u16().await?);
+        assert_eq!(u_32, reader.read_u32().await?);
+        assert_eq!(u_64, reader.read_u64().await?);
+        assert_eq!(u_128, reader.read_u128().await?);
+        assert_eq!(u_size, reader.read_usize().await?);
+
+        assert_eq!(i_8, reader.read_i8().await?);
+        assert_eq!(i_16, reader.read_i16().await?);
+        assert_eq!(i_32, reader.read_i32().await?);
+        assert_eq!(i_64, reader.read_i64().await?);
+        assert_eq!(i_128, reader.read_i128().await?);
+        assert_eq!(i_size, reader.read_isize().await?);
+
+        assert_eq!(mock_str, reader.read_string().await?);
+        assert_eq!(mock_char, reader.read_char().await?);
+
+        assert_eq!(mock_true, reader.read_bool().await?);
+        assert_eq!(mock_false, reader.read_bool().await?);
+
+        assert_eq!(f_32, reader.read_f32().await?);
+        assert_eq!(f_64, reader.read_f64().await?);
 
         Ok(())
     }
