@@ -55,6 +55,7 @@ pub(crate) use decode_endian;
 pub(crate) use guard_size;
 
 /// Variants to describe endianness.
+#[derive(Clone, Copy)]
 pub enum Endian {
     /// Big endian.
     Big,
@@ -69,7 +70,7 @@ impl Default for Endian {
 }
 
 /// Options for reading and writing.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Options {
     /// The endian type.
     pub endian: Endian,
@@ -436,10 +437,59 @@ pub trait Decode {
 
 #[cfg(test)]
 mod tests {
-    use super::{BinaryReader, BinaryWriter};
+    use super::{BinaryReader, BinaryWriter, Endian, Options};
     use anyhow::Result;
     use std::io::Cursor;
     use tempfile::tempfile;
+
+    #[test]
+    fn max_buffer_size() -> Result<()> {
+        let options = Options {
+            endian: Endian::Little,
+            max_buffer_size: Some(1024),
+        };
+
+        let mut buffer = Vec::new();
+        let stream = Cursor::new(&mut buffer);
+        let mut writer = BinaryWriter::new(stream, options.clone());
+
+        let large_string = ".".repeat(2048);
+        let result = writer.write_string(&large_string);
+        assert!(result.is_err());
+
+        let large_buffer = [0u8; 2048];
+        let result = writer.write_bytes(&large_buffer);
+        assert!(result.is_err());
+
+        // Create invalid values for the read assertions
+        let mut read_string_buffer = {
+            let mut buffer = Vec::new();
+            let stream = Cursor::new(&mut buffer);
+            let mut writer = BinaryWriter::new(stream, Default::default());
+            writer.write_string(&large_string)?;
+            buffer
+        };
+
+        let mut read_bytes_buffer = {
+            let mut buffer = Vec::new();
+            let stream = Cursor::new(&mut buffer);
+            let mut writer = BinaryWriter::new(stream, Default::default());
+            writer.write_bytes(&large_buffer)?;
+            buffer
+        };
+
+        let mut stream = Cursor::new(&mut read_string_buffer);
+        let mut reader = BinaryReader::new(&mut stream, options.clone());
+        let result = reader.read_string();
+        assert!(result.is_err());
+
+        let mut stream = Cursor::new(&mut read_bytes_buffer);
+        let mut reader = BinaryReader::new(&mut stream, options.clone());
+        let result = reader.read_bytes(2048);
+        assert!(result.is_err());
+
+        Ok(())
+    }
 
     #[test]
     fn borrow_test() -> Result<()> {

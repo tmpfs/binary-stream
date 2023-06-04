@@ -9,7 +9,7 @@ use tokio::io::{
     AsyncWriteExt,
 };
 
-use crate::{decode_endian, Endian, Options};
+use crate::{decode_endian, guard_size, Endian, Options};
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {
