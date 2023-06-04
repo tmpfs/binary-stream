@@ -1,11 +1,10 @@
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
-//! Library for reading and writing binary data.
+//! Read and write binary data to streams.
 //!
-//! An asynchronous version for `tokio` is available using
-//! the `async` feature.
+//! An asynchronous version using [futures::io](https://docs.rs/futures/latest/futures/io/index.html) is available using the `async` feature.
 //!
-//! Strings are length prefixed using `u64` by default, use
-//! the `32bit` feature to use `u32` for the string length prefix.
+//! Strings are length prefixed using `u32` by default, use
+//! the `64bit` feature if you really need huge strings.
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
@@ -13,7 +12,7 @@ use std::{
 };
 
 #[cfg(feature = "async")]
-pub mod async_stream;
+pub mod futures;
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {
@@ -123,14 +122,14 @@ impl<R: Read + Seek> BinaryReader<R> {
 
     /// Read a length-prefixed `String` from the stream.
     pub fn read_string(&mut self) -> Result<String> {
-        let chars = if cfg!(feature = "32bit") {
-            let str_len = self.read_u32()?;
+        let chars = if cfg!(feature = "64bit") {
+            let str_len = self.read_u64()?;
             guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
             chars
         } else {
-            let str_len = self.read_u64()?;
+            let str_len = self.read_u32()?;
             guard_size!(str_len, self.options.max_buffer_size);
             let mut chars: Vec<u8> = vec![0; str_len as usize];
             self.stream.read_exact(&mut chars)?;
@@ -315,10 +314,10 @@ impl<W: Write + Seek> BinaryWriter<W> {
     pub fn write_string<S: AsRef<str>>(&mut self, value: S) -> Result<usize> {
         let bytes = value.as_ref().as_bytes();
         guard_size!(bytes.len(), self.options.max_buffer_size);
-        if cfg!(feature = "32bit") {
-            self.write_u32(bytes.len() as u32)?;
-        } else {
+        if cfg!(feature = "64bit") {
             self.write_u64(bytes.len() as u64)?;
+        } else {
+            self.write_u32(bytes.len() as u32)?;
         }
         Ok(self.stream.write(bytes)?)
     }
@@ -602,10 +601,10 @@ mod tests {
 
         let mut buffer = stream.into_inner();
 
-        if cfg!(feature = "32bit") {
-            assert_eq!(15, buffer.len());
-        } else {
+        if cfg!(feature = "64bit") {
             assert_eq!(19, buffer.len());
+        } else {
+            assert_eq!(15, buffer.len());
         }
 
         let mut stream = Cursor::new(&mut buffer);
@@ -623,10 +622,10 @@ mod tests {
         let value = reader.read_char()?;
         assert_eq!('b', value);
 
-        if cfg!(feature = "32bit") {
-            assert_eq!(15, buffer.len());
-        } else {
+        if cfg!(feature = "64bit") {
             assert_eq!(19, buffer.len());
+        } else {
+            assert_eq!(15, buffer.len());
         }
 
         Ok(())
