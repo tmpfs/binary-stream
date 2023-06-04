@@ -2,7 +2,7 @@
 //! Library for reading and writing binary data.
 //!
 //! An asynchronous version for `tokio` is available using
-//! the `tokio` feature.
+//! the `async` feature.
 //!
 //! Strings are length prefixed using `u64` by default, use
 //! the `32bit` feature to use `u32` for the string length prefix.
@@ -12,8 +12,8 @@ use std::{
     io::{Error, ErrorKind, Read, Result, Seek, SeekFrom, Write},
 };
 
-#[cfg(feature = "tokio")]
-pub mod tokio;
+#[cfg(feature = "async")]
+pub mod async_stream;
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {
