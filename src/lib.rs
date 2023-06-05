@@ -8,7 +8,10 @@
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
-    io::{Error, ErrorKind, Read, Result, Seek, SeekFrom, Write},
+    io::{
+        BufReader, BufWriter, Cursor, Error, ErrorKind, Read, Result, Seek,
+        SeekFrom, Write,
+    },
 };
 
 #[cfg(feature = "async")]
@@ -88,9 +91,7 @@ impl From<Endian> for Options {
 
 /// Get the length of a stream by seeking to the end
 /// and then restoring the previous position.
-pub fn stream_length<S: Seek>(
-    stream: &mut S,
-) -> Result<u64> {
+pub fn stream_length<S: Seek>(stream: &mut S) -> Result<u64> {
     let position = stream.stream_position()?;
     let length = stream.seek(SeekFrom::End(0))?;
     stream.seek(SeekFrom::Start(position))?;
@@ -419,6 +420,11 @@ impl<W: Write + Seek> BinaryWriter<W> {
         guard_size!(data.as_ref().len(), self.options.max_buffer_size);
         Ok(self.stream.write(data.as_ref())?)
     }
+
+    /// Flush the write buffer.
+    pub fn flush(&mut self) -> Result<()> {
+        self.stream.flush()
+    }
 }
 
 /// Trait for encoding to binary.
@@ -437,6 +443,53 @@ pub trait Decodable {
         &mut self,
         reader: &mut BinaryReader<R>,
     ) -> Result<()>;
+}
+
+/// Encode to a binary buffer.
+pub fn encode(
+    encodable: &impl Encodable,
+    options: Options,
+) -> Result<Vec<u8>> {
+    let mut buffer = Vec::new();
+    let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+    encode_stream(encodable, &mut stream, options)?;
+    drop(stream);
+    Ok(buffer)
+}
+
+/// Decode from a binary buffer.
+pub fn decode<T: Decodable + Default>(
+    buffer: &[u8],
+    options: Options,
+) -> Result<T> {
+    let mut stream = BufReader::new(Cursor::new(buffer));
+    decode_stream::<T, _>(&mut stream, options)
+}
+
+/// Encode to a stream.
+pub fn encode_stream<S>(
+    encodable: &impl Encodable,
+    stream: &mut S,
+    options: Options,
+) -> Result<()>
+where
+    S: Write + Seek,
+{
+    let mut writer = BinaryWriter::new(stream, options);
+    encodable.encode(&mut writer)?;
+    writer.flush()?;
+    Ok(())
+}
+
+/// Decode from a stream.
+pub fn decode_stream<T: Decodable + Default, S: Read + Seek>(
+    stream: &mut S,
+    options: Options,
+) -> Result<T> {
+    let mut reader = BinaryReader::new(stream, options);
+    let mut decoded: T = T::default();
+    decoded.decode(&mut reader)?;
+    Ok(decoded)
 }
 
 #[cfg(test)]

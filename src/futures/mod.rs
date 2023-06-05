@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use futures::io::{
     AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
-    AsyncWriteExt,
+    AsyncWriteExt, BufReader, BufWriter, Cursor,
 };
 use std::{
     borrow::Borrow,
@@ -436,6 +436,55 @@ pub trait Decodable {
         &mut self,
         reader: &mut BinaryReader<R>,
     ) -> Result<()>;
+}
+
+/// Encode to a binary buffer.
+pub async fn encode(
+    encodable: &impl Encodable,
+    options: Options,
+) -> Result<Vec<u8>> {
+    let mut buffer = Vec::new();
+    let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+    encode_stream(encodable, &mut stream, options).await?;
+    Ok(buffer)
+}
+
+/// Decode from a binary buffer.
+pub async fn decode<T: Decodable + Default>(
+    buffer: &[u8],
+    options: Options,
+) -> Result<T> {
+    let mut stream = BufReader::new(Cursor::new(buffer));
+    decode_stream::<T, _>(&mut stream, options).await
+}
+
+/// Encode to a stream.
+pub async fn encode_stream<S>(
+    encodable: &impl Encodable,
+    stream: &mut S,
+    options: Options,
+) -> Result<()>
+where
+    S: AsyncWrite + AsyncSeek + Send + Sync + Unpin,
+{
+    let mut writer = BinaryWriter::new(stream, options);
+    encodable.encode(&mut writer).await?;
+    writer.flush().await?;
+    Ok(())
+}
+
+/// Decode from a stream.
+pub async fn decode_stream<
+    T: Decodable + Default,
+    S: AsyncRead + AsyncSeek + Send + Sync + Unpin,
+>(
+    stream: &mut S,
+    options: Options,
+) -> Result<T> {
+    let mut reader = BinaryReader::new(stream, options);
+    let mut decoded: T = T::default();
+    decoded.decode(&mut reader).await?;
+    Ok(decoded)
 }
 
 #[cfg(test)]
