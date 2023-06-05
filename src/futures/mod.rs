@@ -429,12 +429,121 @@ pub trait Decode {
 
 #[cfg(test)]
 mod test {
-    use super::{BinaryReader, BinaryWriter};
+    use std::io::{self, SeekFrom};
+    use async_trait::async_trait;
+    use super::{BinaryReader, BinaryWriter, Encode, Decode};
     use anyhow::Result;
-    use futures::io::{BufReader, BufWriter, Cursor};
+    use futures::io::{BufReader, BufWriter, Cursor, AsyncWrite, AsyncRead, AsyncSeek};
     use tokio_util::compat::{
         TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
     };
+    
+    #[derive(Debug, Default, Eq, PartialEq)]
+    struct Group(pub Vec<u8>, pub Vec<u8>);
+    #[derive(Debug, Default, Eq, PartialEq)]
+    struct Entry([u8; 16], Group);
+
+    #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    impl Encode for Group {
+        async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+            &self,
+            writer: &mut BinaryWriter<W>,
+        ) -> io::Result<()> {
+            writer.write_u32(self.0.len() as u32).await?;
+            writer.write_bytes(self.0.as_slice()).await?;
+            writer.write_u32(self.1.len() as u32).await?;
+            writer.write_bytes(self.1.as_slice()).await?;
+            Ok(())
+        }
+    }
+
+    #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    impl Decode for Group {
+        async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
+            &mut self,
+            reader: &mut BinaryReader<R>,
+        ) -> io::Result<()> {
+            let len = reader.read_u32().await?;
+            self.0 = reader.read_bytes(len as usize).await?;
+            let len = reader.read_u32().await?;
+            self.1 = reader.read_bytes(len as usize).await?;
+            Ok(())
+        }
+    }
+
+    #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    impl Encode for Entry {
+        async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+            &self,
+            writer: &mut BinaryWriter<W>,
+        ) -> io::Result<()> {
+            // Write the UUID
+            writer.write_bytes(self.0.as_ref()).await?;
+
+            let size_pos = writer.tell().await?;
+            
+            writer.write_u32(0).await?;
+
+            self.1.encode(&mut *writer).await?;
+
+            // Encode the data length for lazy iteration
+            let row_pos = writer.tell().await?;
+            let row_len = row_pos - (size_pos + 4);
+            writer.seek(SeekFrom::Start(size_pos)).await?;
+            writer.write_u32(row_len as u32).await?;
+            writer.seek(SeekFrom::Start(row_pos)).await?;
+
+            Ok(())
+        }
+    }
+
+    #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    impl Decode for Entry {
+        async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
+            &mut self,
+            reader: &mut BinaryReader<R>,
+        ) -> io::Result<()> {
+
+            let id = reader.read_bytes(16).await?.try_into().unwrap();
+            self.0 = id;
+
+            // Read in the length of the data blob
+            let _ = reader.read_u32().await?;
+
+            let mut group: Group = Default::default();
+            group.decode(&mut *reader).await?;
+            self.1 = group;
+
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn async_tokio_encode_decode() -> Result<()> {
+        let entry = Entry([0u8; 16], Group(vec![0u8; 512], vec![0u8; 512]));
+
+        let mut buffer = Vec::new();
+        let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+        let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+        entry.encode(&mut writer).await?;
+        writer.flush().await?;
+
+        let mut stream = BufReader::new(Cursor::new(&mut buffer));
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
+        
+        let mut decoded_entry: Entry = Default::default();
+        decoded_entry.decode(&mut reader).await?;
+
+        assert_eq!(entry, decoded_entry);
+
+        Ok(())
+    }
+
     #[tokio::test]
     async fn async_tokio_file() -> Result<()> {
         let mock_str = "mock value".to_string();
