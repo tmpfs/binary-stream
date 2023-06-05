@@ -114,9 +114,9 @@ impl<R: Read + Seek> BinaryReader<R> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub fn len(&mut self) -> Result<u64> {
-        let position = self.tell()?;
+        let position = self.stream.stream_position()?;
         let length = self.stream.seek(SeekFrom::End(0))?;
-        self.seek(SeekFrom::Start(position))?;
+        self.stream.seek(SeekFrom::Start(position))?;
         Ok(length)
     }
 
@@ -304,9 +304,9 @@ impl<W: Write + Seek> BinaryWriter<W> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub fn len(&mut self) -> Result<u64> {
-        let position = self.tell()?;
+        let position = self.stream.stream_position()?;
         let length = self.stream.seek(SeekFrom::End(0))?;
-        self.seek(SeekFrom::Start(position))?;
+        self.stream.seek(SeekFrom::Start(position))?;
         Ok(length)
     }
 

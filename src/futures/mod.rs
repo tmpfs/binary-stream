@@ -49,9 +49,9 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub async fn len(&mut self) -> Result<u64> {
-        let position = self.tell().await?;
+        let position = self.stream.stream_position().await?;
         let length = self.stream.seek(SeekFrom::End(0)).await?;
-        self.seek(SeekFrom::Start(position)).await?;
+        self.stream.seek(SeekFrom::Start(position)).await?;
         Ok(length)
     }
 
@@ -239,9 +239,9 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub async fn len(&mut self) -> Result<u64> {
-        let position = self.tell().await?;
+        let position = self.stream.stream_position().await?;
         let length = self.stream.seek(SeekFrom::End(0)).await?;
-        self.seek(position).await?;
+        self.stream.seek(SeekFrom::Start(position)).await?;
         Ok(length)
     }
 
