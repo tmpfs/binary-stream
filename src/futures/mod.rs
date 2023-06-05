@@ -437,6 +437,7 @@ mod test {
     use tokio_util::compat::{
         TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
     };
+    use tokio::fs::File;
     
     #[derive(Debug, Default, Eq, PartialEq)]
     struct Group(pub Vec<u8>, pub Vec<u8>);
@@ -526,15 +527,22 @@ mod test {
     async fn async_tokio_encode_decode() -> Result<()> {
         let entry = Entry([0u8; 16], Group(vec![0u8; 512], vec![0u8; 512]));
 
-        let mut buffer = Vec::new();
-        let mut stream = BufWriter::new(Cursor::new(&mut buffer));
-        let mut writer = BinaryWriter::new(&mut stream, Default::default());
+        let path = "target/encode_decode.test";
+
+        let mut file = File::create(path).await?.compat_write();
+
+        let mut writer = BinaryWriter::new(&mut file, Default::default());
+
+        println!("encoding...");
 
         entry.encode(&mut writer).await?;
+        
+        println!("encoding...");
+
         writer.flush().await?;
 
-        let mut stream = BufReader::new(Cursor::new(&mut buffer));
-        let mut reader = BinaryReader::new(&mut stream, Default::default());
+        let mut file = File::open(path).await?.compat();
+        let mut reader = BinaryReader::new(&mut file, Default::default());
         
         let mut decoded_entry: Entry = Default::default();
         decoded_entry.decode(&mut reader).await?;
