@@ -422,7 +422,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
 }
 
 /// Trait for encoding to binary.
-pub trait Encode {
+pub trait Encodable {
     /// Encode self into the binary writer.
     fn encode<W: Write + Seek>(
         &self,
@@ -431,7 +431,7 @@ pub trait Encode {
 }
 
 /// Trait for decoding from binary.
-pub trait Decode {
+pub trait Decodable {
     /// Decode from the binary reader into self.
     fn decode<R: Read + Seek>(
         &mut self,

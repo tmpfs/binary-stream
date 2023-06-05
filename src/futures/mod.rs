@@ -419,7 +419,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
 /// Trait for encoding to binary.
 #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait Encode {
+pub trait Encodable {
     /// Encode self into the binary writer.
     async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
         &self,
@@ -430,7 +430,7 @@ pub trait Encode {
 /// Trait for decoding from binary.
 #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait Decode {
+pub trait Decodable {
     /// Decode from the binary reader into self.
     async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
         &mut self,
@@ -440,7 +440,7 @@ pub trait Decode {
 
 #[cfg(test)]
 mod test {
-    use super::{BinaryReader, BinaryWriter, Decode, Encode};
+    use super::{BinaryReader, BinaryWriter, Decodable, Encodable};
     use anyhow::Result;
     use async_trait::async_trait;
     use futures::io::{
@@ -459,7 +459,7 @@ mod test {
 
     #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-    impl Encode for Group {
+    impl Encodable for Group {
         async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
             &self,
             writer: &mut BinaryWriter<W>,
@@ -474,7 +474,7 @@ mod test {
 
     #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-    impl Decode for Group {
+    impl Decodable for Group {
         async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
             &mut self,
             reader: &mut BinaryReader<R>,
@@ -489,7 +489,7 @@ mod test {
 
     #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-    impl Encode for Entry {
+    impl Encodable for Entry {
         async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
             &self,
             writer: &mut BinaryWriter<W>,
@@ -516,7 +516,7 @@ mod test {
 
     #[cfg_attr(target_arch="wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-    impl Decode for Entry {
+    impl Decodable for Entry {
         async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
             &mut self,
             reader: &mut BinaryReader<R>,
