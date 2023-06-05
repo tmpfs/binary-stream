@@ -228,11 +228,17 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
 
     /// Seek to a position.
     pub async fn seek(&mut self, to: SeekFrom) -> Result<u64> {
+        if cfg!(feature = "tokio-compat-flush") {
+            self.stream.flush().await?;
+        }
         Ok(self.stream.seek(to).await?)
     }
 
     /// Get the current position.
     pub async fn tell(&mut self) -> Result<u64> {
+        if cfg!(feature = "tokio-compat-flush") {
+            self.stream.flush().await?;
+        }
         Ok(self.stream.stream_position().await?)
     }
 
@@ -429,16 +435,18 @@ pub trait Decode {
 
 #[cfg(test)]
 mod test {
-    use std::io::{self, SeekFrom};
-    use async_trait::async_trait;
-    use super::{BinaryReader, BinaryWriter, Encode, Decode};
+    use super::{BinaryReader, BinaryWriter, Decode, Encode};
     use anyhow::Result;
-    use futures::io::{BufReader, BufWriter, Cursor, AsyncWrite, AsyncRead, AsyncSeek};
+    use async_trait::async_trait;
+    use futures::io::{
+        AsyncRead, AsyncSeek, AsyncWrite, BufReader, BufWriter, Cursor,
+    };
+    use std::io::{self, SeekFrom};
+    use tokio::fs::File;
     use tokio_util::compat::{
         TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
     };
-    use tokio::fs::File;
-    
+
     #[derive(Debug, Default, Eq, PartialEq)]
     struct Group(pub Vec<u8>, pub Vec<u8>);
     #[derive(Debug, Default, Eq, PartialEq)]
@@ -485,7 +493,7 @@ mod test {
             writer.write_bytes(self.0.as_ref()).await?;
 
             let size_pos = writer.tell().await?;
-            
+
             writer.write_u32(0).await?;
 
             self.1.encode(&mut *writer).await?;
@@ -508,7 +516,6 @@ mod test {
             &mut self,
             reader: &mut BinaryReader<R>,
         ) -> io::Result<()> {
-
             let id = reader.read_bytes(16).await?.try_into().unwrap();
             self.0 = id;
 
@@ -532,18 +539,12 @@ mod test {
         let mut file = File::create(path).await?.compat_write();
 
         let mut writer = BinaryWriter::new(&mut file, Default::default());
-
-        println!("encoding...");
-
         entry.encode(&mut writer).await?;
-        
-        println!("encoding...");
-
         writer.flush().await?;
 
         let mut file = File::open(path).await?.compat();
         let mut reader = BinaryReader::new(&mut file, Default::default());
-        
+
         let mut decoded_entry: Entry = Default::default();
         decoded_entry.decode(&mut reader).await?;
 
