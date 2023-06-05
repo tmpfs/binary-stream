@@ -37,8 +37,8 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     }
 
     /// Seek to a position.
-    pub async fn seek(&mut self, to: u64) -> Result<u64> {
-        Ok(self.stream.seek(SeekFrom::Start(to)).await?)
+    pub async fn seek(&mut self, to: SeekFrom) -> Result<u64> {
+        Ok(self.stream.seek(to).await?)
     }
 
     /// Get the current position.
@@ -51,7 +51,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     pub async fn len(&mut self) -> Result<u64> {
         let position = self.tell().await?;
         let length = self.stream.seek(SeekFrom::End(0)).await?;
-        self.seek(position).await?;
+        self.seek(SeekFrom::Start(position)).await?;
         Ok(length)
     }
 
@@ -227,8 +227,8 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     }
 
     /// Seek to a position.
-    pub async fn seek(&mut self, to: u64) -> Result<u64> {
-        Ok(self.stream.seek(SeekFrom::Start(to)).await?)
+    pub async fn seek(&mut self, to: SeekFrom) -> Result<u64> {
+        Ok(self.stream.seek(to).await?)
     }
 
     /// Get the current position.

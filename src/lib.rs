@@ -102,8 +102,8 @@ impl<R: Read + Seek> BinaryReader<R> {
     }
 
     /// Seek to a position.
-    pub fn seek(&mut self, to: u64) -> Result<u64> {
-        Ok(self.stream.seek(SeekFrom::Start(to))?)
+    pub fn seek(&mut self, to: SeekFrom) -> Result<u64> {
+        Ok(self.stream.seek(to)?)
     }
 
     /// Get the current seek position.
@@ -116,7 +116,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     pub fn len(&mut self) -> Result<u64> {
         let position = self.tell()?;
         let length = self.stream.seek(SeekFrom::End(0))?;
-        self.seek(position)?;
+        self.seek(SeekFrom::Start(position))?;
         Ok(length)
     }
 
@@ -292,8 +292,8 @@ impl<W: Write + Seek> BinaryWriter<W> {
     }
 
     /// Seek to a position.
-    pub fn seek(&mut self, to: u64) -> Result<u64> {
-        Ok(self.stream.seek(SeekFrom::Start(to))?)
+    pub fn seek(&mut self, to: SeekFrom) -> Result<u64> {
+        Ok(self.stream.seek(to)?)
     }
 
     /// Get the current seek position.
@@ -306,7 +306,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
     pub fn len(&mut self) -> Result<u64> {
         let position = self.tell()?;
         let length = self.stream.seek(SeekFrom::End(0))?;
-        self.seek(position)?;
+        self.seek(SeekFrom::Start(position))?;
         Ok(length)
     }
 
@@ -438,7 +438,7 @@ pub trait Decode {
 mod tests {
     use super::{BinaryReader, BinaryWriter, Endian, Options};
     use anyhow::Result;
-    use std::io::Cursor;
+    use std::io::{Cursor, SeekFrom};
     use tempfile::tempfile;
 
     #[test]
@@ -610,7 +610,7 @@ mod tests {
         let mut stream = Cursor::new(&mut buffer);
         let mut reader = BinaryReader::new(&mut stream, Default::default());
 
-        reader.seek(0)?;
+        reader.seek(SeekFrom::Start(0))?;
         let value = reader.read_u32()?;
         assert_eq!(42, value);
 
@@ -640,12 +640,12 @@ mod tests {
         let mut writer = BinaryWriter::new(&mut file, Default::default());
 
         writer.write_bytes([16; 32].to_vec())?;
-        writer.seek(seek_loc)?;
+        writer.seek(SeekFrom::Start(seek_loc))?;
         assert_eq!(writer.tell()?, seek_loc);
         writer.write_f32(temp)?;
 
         let mut reader = BinaryReader::new(&mut file, Default::default());
-        reader.seek(seek_loc)?;
+        reader.seek(SeekFrom::Start(seek_loc))?;
         assert_eq!(reader.tell()?, seek_loc);
         let read_temp = reader.read_f32()?;
 
@@ -662,7 +662,7 @@ mod tests {
         let mut writer = BinaryWriter::new(&mut file, Default::default());
         writer.write_f64(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_f64()?;
@@ -680,7 +680,7 @@ mod tests {
 
         writer.write_f32(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_f32()?;
@@ -698,7 +698,7 @@ mod tests {
 
         writer.write_isize(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_isize()?;
@@ -716,7 +716,7 @@ mod tests {
 
         writer.write_usize(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_usize()?;
@@ -734,7 +734,7 @@ mod tests {
 
         writer.write_i64(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_i64()?;
@@ -752,7 +752,7 @@ mod tests {
 
         writer.write_i128(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_i128()?;
@@ -770,7 +770,7 @@ mod tests {
 
         writer.write_i32(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_i32()?;
@@ -788,7 +788,7 @@ mod tests {
 
         writer.write_i16(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_i16()?;
@@ -806,7 +806,7 @@ mod tests {
 
         writer.write_i8(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_i8()?;
@@ -824,7 +824,7 @@ mod tests {
 
         writer.write_u64(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_u64()?;
@@ -842,7 +842,7 @@ mod tests {
 
         writer.write_u128(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_u128()?;
@@ -860,7 +860,7 @@ mod tests {
 
         writer.write_u32(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_u32()?;
@@ -878,7 +878,7 @@ mod tests {
 
         writer.write_u16(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_u16()?;
@@ -896,7 +896,7 @@ mod tests {
 
         writer.write_u8(temp)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_u8()?;
@@ -916,7 +916,7 @@ mod tests {
 
         writer.write_bytes(temp.clone())?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_temp = reader.read_bytes(count)?;
@@ -931,7 +931,7 @@ mod tests {
         let mut writer = BinaryWriter::new(&mut file, Default::default());
         writer.write_f32(5.0)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
         reader.read_f32()?;
 
@@ -948,7 +948,7 @@ mod tests {
         let mut writer = BinaryWriter::new(&mut file, Default::default());
         writer.write_string(temp.to_string())?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
         let string = reader.read_string()?;
         assert_eq!(temp, string);
@@ -967,7 +967,7 @@ mod tests {
         writer.write_bool(positive)?;
         writer.write_bool(negative)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let read_positive = reader.read_bool()?;
@@ -990,7 +990,7 @@ mod tests {
         writer.write_f32(value_b)?;
 
         let mut reader = BinaryReader::new(&mut stream, Default::default());
-        reader.seek(0)?;
+        reader.seek(SeekFrom::Start(0))?;
         let value = reader.read_f32()?;
         assert_eq!(value_a, value);
         let value = reader.read_f32()?;
@@ -1009,13 +1009,13 @@ mod tests {
         writer.write_f32(2.0)?;
         writer.write_f32(3.0)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         writer.write_f32(4.0)?;
         writer.write_f32(5.0)?;
         writer.write_f32(6.0)?;
 
         let mut reader = BinaryReader::new(&mut stream, Default::default());
-        reader.seek(0)?;
+        reader.seek(SeekFrom::Start(0))?;
         let value = reader.read_f32()?;
         assert_eq!(4.0, value);
         let value = reader.read_f32()?;
@@ -1046,14 +1046,14 @@ mod tests {
         writer.write_f32(2.0)?;
         writer.write_f32(3.0)?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         writer.write_f32(4.0)?;
         writer.write_f32(5.0)?;
         writer.write_f32(6.0)?;
 
         //let file = std::fs::File::open("filestream_overlapping.test")?;
 
-        writer.seek(0)?;
+        writer.seek(SeekFrom::Start(0))?;
         let mut reader = BinaryReader::new(&mut file, Default::default());
         let value = reader.read_f32()?;
         assert_eq!(4.0, value);
