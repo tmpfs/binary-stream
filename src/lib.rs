@@ -86,6 +86,17 @@ impl From<Endian> for Options {
     }
 }
 
+/// Get the length of a stream by seeking to the end
+/// and then restoring the previous position.
+pub fn stream_length<S: Seek>(
+    stream: &mut S,
+) -> Result<u64> {
+    let position = stream.stream_position()?;
+    let length = stream.seek(SeekFrom::End(0))?;
+    stream.seek(SeekFrom::Start(position))?;
+    Ok(length)
+}
+
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
@@ -114,10 +125,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub fn len(&mut self) -> Result<u64> {
-        let position = self.stream.stream_position()?;
-        let length = self.stream.seek(SeekFrom::End(0))?;
-        self.stream.seek(SeekFrom::Start(position))?;
-        Ok(length)
+        stream_length(&mut self.stream)
     }
 
     /// Read a length-prefixed `String` from the stream.
@@ -304,10 +312,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub fn len(&mut self) -> Result<u64> {
-        let position = self.stream.stream_position()?;
-        let length = self.stream.seek(SeekFrom::End(0))?;
-        self.stream.seek(SeekFrom::Start(position))?;
-        Ok(length)
+        stream_length(&mut self.stream)
     }
 
     /// Write a length-prefixed `String` to the stream.

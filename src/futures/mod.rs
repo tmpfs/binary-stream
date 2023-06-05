@@ -21,6 +21,17 @@ macro_rules! encode_endian {
     };
 }
 
+/// Get the length of a stream by seeking to the end
+/// and then restoring the previous position.
+pub async fn stream_length<S: AsyncSeek + Unpin>(
+    stream: &mut S,
+) -> Result<u64> {
+    let position = stream.stream_position().await?;
+    let length = stream.seek(SeekFrom::End(0)).await?;
+    stream.seek(SeekFrom::Start(position)).await?;
+    Ok(length)
+}
+
 /// Read from a stream.
 pub struct BinaryReader<R>
 where
@@ -49,10 +60,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub async fn len(&mut self) -> Result<u64> {
-        let position = self.stream.stream_position().await?;
-        let length = self.stream.seek(SeekFrom::End(0)).await?;
-        self.stream.seek(SeekFrom::Start(position)).await?;
-        Ok(length)
+        stream_length(&mut self.stream).await
     }
 
     /// Read a length-prefixed `String` from the stream.
@@ -245,10 +253,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
     pub async fn len(&mut self) -> Result<u64> {
-        let position = self.stream.stream_position().await?;
-        let length = self.stream.seek(SeekFrom::End(0)).await?;
-        self.stream.seek(SeekFrom::Start(position)).await?;
-        Ok(length)
+        stream_length(&mut self.stream).await
     }
 
     /// Write a length-prefixed `String` to the stream.
