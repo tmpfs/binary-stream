@@ -107,7 +107,7 @@ impl<R: Read + Seek> BinaryReader<R> {
     }
 
     /// Get the current seek position.
-    pub fn tell(&mut self) -> Result<u64> {
+    pub fn stream_position(&mut self) -> Result<u64> {
         Ok(self.stream.stream_position()?)
     }
 
@@ -297,7 +297,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
     }
 
     /// Get the current seek position.
-    pub fn tell(&mut self) -> Result<u64> {
+    pub fn stream_position(&mut self) -> Result<u64> {
         Ok(self.stream.stream_position()?)
     }
 
@@ -614,7 +614,7 @@ mod tests {
         let value = reader.read_u32()?;
         assert_eq!(42, value);
 
-        assert_eq!(4, reader.tell()?);
+        assert_eq!(4, reader.stream_position()?);
 
         let value = reader.read_string()?;
         assert_eq!("foo", &value);
@@ -641,12 +641,12 @@ mod tests {
 
         writer.write_bytes([16; 32].to_vec())?;
         writer.seek(SeekFrom::Start(seek_loc))?;
-        assert_eq!(writer.tell()?, seek_loc);
+        assert_eq!(writer.stream_position()?, seek_loc);
         writer.write_f32(temp)?;
 
         let mut reader = BinaryReader::new(&mut file, Default::default());
         reader.seek(SeekFrom::Start(seek_loc))?;
-        assert_eq!(reader.tell()?, seek_loc);
+        assert_eq!(reader.stream_position()?, seek_loc);
         let read_temp = reader.read_f32()?;
 
         assert_eq!(temp, read_temp);

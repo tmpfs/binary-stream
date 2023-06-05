@@ -42,7 +42,7 @@ impl<R: AsyncRead + AsyncSeek + Unpin> BinaryReader<R> {
     }
 
     /// Get the current position.
-    pub async fn tell(&mut self) -> Result<u64> {
+    pub async fn stream_position(&mut self) -> Result<u64> {
         Ok(self.stream.stream_position().await?)
     }
 
@@ -235,7 +235,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
     }
 
     /// Get the current position.
-    pub async fn tell(&mut self) -> Result<u64> {
+    pub async fn stream_position(&mut self) -> Result<u64> {
         if cfg!(feature = "tokio-compat-flush") {
             self.stream.flush().await?;
         }
@@ -492,14 +492,14 @@ mod test {
             // Write the UUID
             writer.write_bytes(self.0.as_ref()).await?;
 
-            let size_pos = writer.tell().await?;
+            let size_pos = writer.stream_position().await?;
 
             writer.write_u32(0).await?;
 
             self.1.encode(&mut *writer).await?;
 
             // Encode the data length for lazy iteration
-            let row_pos = writer.tell().await?;
+            let row_pos = writer.stream_position().await?;
             let row_len = row_pos - (size_pos + 4);
             writer.seek(SeekFrom::Start(size_pos)).await?;
             writer.write_u32(row_len as u32).await?;
