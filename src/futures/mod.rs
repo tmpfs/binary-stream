@@ -417,8 +417,7 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
 }
 
 /// Trait for encoding to binary.
-#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait Encodable {
     /// Encode self into the binary writer.
     async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
@@ -428,8 +427,7 @@ pub trait Encodable {
 }
 
 /// Trait for decoding from binary.
-#[cfg_attr(target_arch="wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait Decodable {
     /// Decode from the binary reader into self.
     async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
