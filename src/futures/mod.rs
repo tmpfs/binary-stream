@@ -486,7 +486,7 @@ pub async fn decode_stream<
 }
 
 #[async_trait]
-impl<T> Encodable for Option<T> where T: Encodable + Default {
+impl<T> Encodable for Option<T> where T: Encodable + Default + Send + Sync {
     async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
         &self,
         writer: &mut BinaryWriter<W>,
@@ -500,7 +500,7 @@ impl<T> Encodable for Option<T> where T: Encodable + Default {
 }
 
 #[async_trait]
-impl<T> Decodable for Option<T> where T: Decodable + Default {
+impl<T> Decodable for Option<T> where T: Decodable + Default + Send + Sync {
     async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
         &mut self,
         reader: &mut BinaryReader<R>,
