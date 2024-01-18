@@ -492,6 +492,34 @@ pub fn decode_stream<T: Decodable + Default, S: Read + Seek>(
     Ok(decoded)
 }
 
+impl<T> Encodable for Option<T> where T: Encodable + Default {
+    fn encode<W: Write + Seek>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> Result<()> {
+        writer.write_bool(self.is_some())?;
+        if let Some(value) = self {
+            value.encode(&mut *writer)?;
+        }
+        Ok(())
+    }
+}
+
+impl<T> Decodable for Option<T> where T: Decodable + Default {
+    fn decode<R: Read + Seek>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> Result<()> {
+        let has_value = reader.read_bool()?;
+        if has_value {
+            let mut value: T = Default::default();
+            value.decode(&mut *reader)?;
+            *self = Some(value);
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{BinaryReader, BinaryWriter, Endian, Options};

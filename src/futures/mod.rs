@@ -485,6 +485,36 @@ pub async fn decode_stream<
     Ok(decoded)
 }
 
+#[async_trait]
+impl<T> Encodable for Option<T> where T: Encodable + Default {
+    async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> Result<()> {
+        writer.write_bool(self.is_some()).await?;
+        if let Some(value) = self {
+            value.encode(&mut *writer).await?;
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl<T> Decodable for Option<T> where T: Decodable + Default {
+    async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> Result<()> {
+        let has_value = reader.read_bool().await?;
+        if has_value {
+            let mut value: T = Default::default();
+            value.decode(&mut *reader).await?;
+            *self = Some(value);
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::{BinaryReader, BinaryWriter, Decodable, Encodable};
