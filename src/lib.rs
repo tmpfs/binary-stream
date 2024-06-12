@@ -5,6 +5,11 @@
 //!
 //! Strings are length prefixed using `u32` by default, use
 //! the `64bit` feature if you really need huge strings.
+//!
+//! Encode and decode implementations are provided for all primitive
+//! types and blanket implementations for `Option<T>` and `Vec<T>`;
+//! the blank implementation for `Vec<T>` is length prefixed using a
+//! `u32` so will panic if it is longer than `u32::MAX`.
 #![deny(missing_docs)]
 use std::{
     borrow::Borrow,
@@ -521,6 +526,40 @@ where
             let mut value: T = Default::default();
             value.decode(&mut *reader)?;
             *self = Some(value);
+        }
+        Ok(())
+    }
+}
+
+impl<T> Encodable for Vec<T>
+where
+    T: Encodable + Default,
+{
+    fn encode<W: Write + Seek>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> Result<()> {
+        writer.write_u32(self.len() as u32)?;
+        for item in self {
+            item.encode(&mut *writer)?;
+        }
+        Ok(())
+    }
+}
+
+impl<T> Decodable for Vec<T>
+where
+    T: Decodable + Default + Send + Sync,
+{
+    fn decode<R: Read + Seek>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> Result<()> {
+        let len = reader.read_u32()?;
+        for _ in 0..len {
+            let mut item = T::default();
+            item.decode(&mut *reader)?;
+            self.push(item);
         }
         Ok(())
     }

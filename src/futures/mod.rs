@@ -521,6 +521,42 @@ where
     }
 }
 
+#[async_trait]
+impl<T> Encodable for Vec<T>
+where
+    T: Encodable + Default + Send + Sync,
+{
+    async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+        &self,
+        writer: &mut BinaryWriter<W>,
+    ) -> Result<()> {
+        writer.write_u32(self.len() as u32).await?;
+        for item in self {
+            item.encode(&mut *writer).await?;
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl<T> Decodable for Vec<T>
+where
+    T: Decodable + Default + Send + Sync,
+{
+    async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
+        &mut self,
+        reader: &mut BinaryReader<R>,
+    ) -> Result<()> {
+        let len = reader.read_u32().await?;
+        for _ in 0..len {
+            let mut item = T::default();
+            item.decode(&mut *reader).await?;
+            self.push(item);
+        }
+        Ok(())
+    }
+}
+
 macro_rules! impl_encode_decode {
     ($type:ty, $read:ident, $write:ident) => {
         #[async_trait]
@@ -920,6 +956,30 @@ mod test {
 
         assert_eq!(f_32, o_f32);
         assert_eq!(f_64, o_f64);
+
+        Ok(())
+    }
+
+    // Tests encoding and decoding using the blanket implementation
+    // for Vec.
+    #[tokio::test]
+    async fn async_encode_decode_vec() -> Result<()> {
+        let mut buffer = Vec::new();
+        let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+        let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+        let list = vec![1u8, 2u8, 3u8];
+        list.encode(&mut writer).await?;
+
+        writer.flush().await?;
+
+        let mut stream = BufReader::new(Cursor::new(&mut buffer));
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+        let mut o_list = vec![];
+
+        o_list.decode(&mut reader).await?;
+        assert_eq!(list, o_list);
 
         Ok(())
     }
