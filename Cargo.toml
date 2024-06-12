@@ -1,6 +1,6 @@
 [package]
 name = "binary-stream"
-version = "8.3.0"
+version = "9.0.0"
 authors = [
   "Mathias Danielsen <mathiasda98@hotmail.com>",
   "Muji <muji@tmpfs.org>"

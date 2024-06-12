@@ -492,7 +492,10 @@ pub fn decode_stream<T: Decodable + Default, S: Read + Seek>(
     Ok(decoded)
 }
 
-impl<T> Encodable for Option<T> where T: Encodable + Default {
+impl<T> Encodable for Option<T>
+where
+    T: Encodable + Default,
+{
     fn encode<W: Write + Seek>(
         &self,
         writer: &mut BinaryWriter<W>,
@@ -505,7 +508,10 @@ impl<T> Encodable for Option<T> where T: Encodable + Default {
     }
 }
 
-impl<T> Decodable for Option<T> where T: Decodable + Default {
+impl<T> Decodable for Option<T>
+where
+    T: Decodable + Default,
+{
     fn decode<R: Read + Seek>(
         &mut self,
         reader: &mut BinaryReader<R>,
@@ -519,6 +525,51 @@ impl<T> Decodable for Option<T> where T: Decodable + Default {
         Ok(())
     }
 }
+
+macro_rules! impl_encode_decode {
+    ($type:ty, $read:ident, $write:ident) => {
+        impl Encodable for $type {
+            fn encode<W: Write + Seek>(
+                &self,
+                writer: &mut BinaryWriter<W>,
+            ) -> Result<()> {
+                writer.$write(self)?;
+                Ok(())
+            }
+        }
+
+        impl Decodable for $type {
+            fn decode<R: Read + Seek>(
+                &mut self,
+                reader: &mut BinaryReader<R>,
+            ) -> Result<()> {
+                *self = reader.$read()?;
+                Ok(())
+            }
+        }
+    };
+}
+
+impl_encode_decode!(u8, read_u8, write_u8);
+impl_encode_decode!(u16, read_u16, write_u16);
+impl_encode_decode!(u32, read_u32, write_u32);
+impl_encode_decode!(u64, read_u64, write_u64);
+impl_encode_decode!(u128, read_u128, write_u128);
+impl_encode_decode!(usize, read_usize, write_usize);
+
+impl_encode_decode!(i8, read_i8, write_i8);
+impl_encode_decode!(i16, read_i16, write_i16);
+impl_encode_decode!(i32, read_i32, write_i32);
+impl_encode_decode!(i64, read_i64, write_i64);
+impl_encode_decode!(i128, read_i128, write_i128);
+impl_encode_decode!(isize, read_isize, write_isize);
+
+impl_encode_decode!(f32, read_f32, write_f32);
+impl_encode_decode!(f64, read_f64, write_f64);
+
+impl_encode_decode!(bool, read_bool, write_bool);
+impl_encode_decode!(char, read_char, write_char);
+impl_encode_decode!(String, read_string, write_string);
 
 #[cfg(test)]
 mod tests {

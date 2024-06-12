@@ -486,7 +486,10 @@ pub async fn decode_stream<
 }
 
 #[async_trait]
-impl<T> Encodable for Option<T> where T: Encodable + Default + Send + Sync {
+impl<T> Encodable for Option<T>
+where
+    T: Encodable + Default + Send + Sync,
+{
     async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
         &self,
         writer: &mut BinaryWriter<W>,
@@ -500,7 +503,10 @@ impl<T> Encodable for Option<T> where T: Encodable + Default + Send + Sync {
 }
 
 #[async_trait]
-impl<T> Decodable for Option<T> where T: Decodable + Default + Send + Sync {
+impl<T> Decodable for Option<T>
+where
+    T: Decodable + Default + Send + Sync,
+{
     async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
         &mut self,
         reader: &mut BinaryReader<R>,
@@ -514,6 +520,53 @@ impl<T> Decodable for Option<T> where T: Decodable + Default + Send + Sync {
         Ok(())
     }
 }
+
+macro_rules! impl_encode_decode {
+    ($type:ty, $read:ident, $write:ident) => {
+        #[async_trait]
+        impl Encodable for $type {
+            async fn encode<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+                &self,
+                writer: &mut BinaryWriter<W>,
+            ) -> Result<()> {
+                writer.$write(self).await?;
+                Ok(())
+            }
+        }
+
+        #[async_trait]
+        impl Decodable for $type {
+            async fn decode<R: AsyncRead + AsyncSeek + Unpin + Send>(
+                &mut self,
+                reader: &mut BinaryReader<R>,
+            ) -> Result<()> {
+                *self = reader.$read().await?;
+                Ok(())
+            }
+        }
+    };
+}
+
+impl_encode_decode!(u8, read_u8, write_u8);
+impl_encode_decode!(u16, read_u16, write_u16);
+impl_encode_decode!(u32, read_u32, write_u32);
+impl_encode_decode!(u64, read_u64, write_u64);
+impl_encode_decode!(u128, read_u128, write_u128);
+impl_encode_decode!(usize, read_usize, write_usize);
+
+impl_encode_decode!(i8, read_i8, write_i8);
+impl_encode_decode!(i16, read_i16, write_i16);
+impl_encode_decode!(i32, read_i32, write_i32);
+impl_encode_decode!(i64, read_i64, write_i64);
+impl_encode_decode!(i128, read_i128, write_i128);
+impl_encode_decode!(isize, read_isize, write_isize);
+
+impl_encode_decode!(f32, read_f32, write_f32);
+impl_encode_decode!(f64, read_f64, write_f64);
+
+impl_encode_decode!(bool, read_bool, write_bool);
+impl_encode_decode!(char, read_char, write_char);
+impl_encode_decode!(String, read_string, write_string);
 
 #[cfg(test)]
 mod test {
@@ -741,6 +794,132 @@ mod test {
 
         assert_eq!(f_32, reader.read_f32().await?);
         assert_eq!(f_64, reader.read_f64().await?);
+
+        Ok(())
+    }
+
+    // Tests encoding and decoding using the blanket implementations
+    // for primitive types provided by the macro.
+    #[tokio::test]
+    async fn async_encode_decode_primitives() -> Result<()> {
+        let mut buffer = Vec::new();
+        let mut stream = BufWriter::new(Cursor::new(&mut buffer));
+        let mut writer = BinaryWriter::new(&mut stream, Default::default());
+
+        let u_8 = 8u8;
+        let u_16 = 16u16;
+        let u_32 = 32u32;
+        let u_64 = 64u64;
+        let u_128 = 128u128;
+        let u_size = 256usize;
+
+        let i_8 = 8i8;
+        let i_16 = 16i16;
+        let i_32 = 32i32;
+        let i_64 = 64i64;
+        let i_128 = 128i128;
+        let i_size = 256isize;
+
+        let mock_str = "mock value".to_string();
+        let mock_char = 'c';
+        let mock_true = true;
+        let mock_false = false;
+
+        let f_32 = 3.14f32;
+        let f_64 = 3.14f64;
+
+        u_8.encode(&mut writer).await?;
+        u_16.encode(&mut writer).await?;
+        u_32.encode(&mut writer).await?;
+        u_64.encode(&mut writer).await?;
+        u_128.encode(&mut writer).await?;
+        u_size.encode(&mut writer).await?;
+
+        i_8.encode(&mut writer).await?;
+        i_16.encode(&mut writer).await?;
+        i_32.encode(&mut writer).await?;
+        i_64.encode(&mut writer).await?;
+        i_128.encode(&mut writer).await?;
+        i_size.encode(&mut writer).await?;
+
+        mock_str.encode(&mut writer).await?;
+        mock_char.encode(&mut writer).await?;
+        mock_true.encode(&mut writer).await?;
+        mock_false.encode(&mut writer).await?;
+
+        f_32.encode(&mut writer).await?;
+        f_64.encode(&mut writer).await?;
+
+        writer.flush().await?;
+
+        let mut stream = BufReader::new(Cursor::new(&mut buffer));
+        let mut reader = BinaryReader::new(&mut stream, Default::default());
+
+        let mut o_u8 = 0u8;
+        let mut o_u16 = 0u16;
+        let mut o_u32 = 0u32;
+        let mut o_u64 = 0u64;
+        let mut o_u128 = 0u128;
+        let mut o_usize = 0usize;
+
+        let mut o_i8 = 0i8;
+        let mut o_i16 = 0i16;
+        let mut o_i32 = 0i32;
+        let mut o_i64 = 0i64;
+        let mut o_i128 = 0i128;
+        let mut o_isize = 0isize;
+
+        let mut o_mock_str = "".to_string();
+        let mut o_mock_char = 'z';
+        let mut o_mock_true = false;
+        let mut o_mock_false = true;
+
+        let mut o_f32 = 0f32;
+        let mut o_f64 = 0f64;
+
+        o_u8.decode(&mut reader).await?;
+        o_u16.decode(&mut reader).await?;
+        o_u32.decode(&mut reader).await?;
+        o_u64.decode(&mut reader).await?;
+        o_u128.decode(&mut reader).await?;
+        o_usize.decode(&mut reader).await?;
+
+        o_i8.decode(&mut reader).await?;
+        o_i16.decode(&mut reader).await?;
+        o_i32.decode(&mut reader).await?;
+        o_i64.decode(&mut reader).await?;
+        o_i128.decode(&mut reader).await?;
+        o_isize.decode(&mut reader).await?;
+
+        o_mock_str.decode(&mut reader).await?;
+        o_mock_char.decode(&mut reader).await?;
+        o_mock_true.decode(&mut reader).await?;
+        o_mock_false.decode(&mut reader).await?;
+
+        o_f32.decode(&mut reader).await?;
+        o_f64.decode(&mut reader).await?;
+
+        assert_eq!(u_8, o_u8);
+        assert_eq!(u_16, o_u16);
+        assert_eq!(u_32, o_u32);
+        assert_eq!(u_64, o_u64);
+        assert_eq!(u_128, o_u128);
+        assert_eq!(u_size, o_usize);
+
+        assert_eq!(i_8, o_i8);
+        assert_eq!(i_16, o_i16);
+        assert_eq!(i_32, o_i32);
+        assert_eq!(i_64, o_i64);
+        assert_eq!(i_128, o_i128);
+        assert_eq!(i_size, o_isize);
+
+        assert_eq!(mock_str, o_mock_str);
+        assert_eq!(mock_char, o_mock_char);
+        assert_eq!(mock_true, o_mock_true);
+        assert_eq!(mock_false, o_mock_false);
+
+        assert_eq!(f_32, o_f32);
+        assert_eq!(f_64, o_f64);
 
         Ok(())
     }
