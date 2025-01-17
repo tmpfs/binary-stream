@@ -1,5 +1,6 @@
 //! Asynchronous reader and writer for tokio.
 use async_trait::async_trait;
+#[cfg(not(feature = "tokio"))]
 use futures::io::{
     AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
     AsyncWriteExt, BufReader, BufWriter, Cursor,
@@ -10,6 +11,15 @@ use std::{
 };
 
 use crate::{decode_endian, guard_size, Endian, Options};
+
+#[cfg(feature = "tokio")]
+use tokio::io::{
+    AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
+    AsyncWriteExt, BufReader, BufWriter,
+};
+
+#[cfg(feature = "tokio")]
+use std::io::Cursor;
 
 macro_rules! encode_endian {
     ($endian:expr, $value:expr, $stream:expr) => {
@@ -609,11 +619,18 @@ mod test {
     use super::{BinaryReader, BinaryWriter, Decodable, Encodable};
     use anyhow::Result;
     use async_trait::async_trait;
+    #[cfg(not(feature = "tokio"))]
     use futures::io::{
         AsyncRead, AsyncSeek, AsyncWrite, BufReader, BufWriter, Cursor,
     };
+    #[cfg(feature = "tokio")]
+    use std::io::Cursor;
     use std::io::{self, SeekFrom};
     use tokio::fs::File;
+    #[cfg(feature = "tokio")]
+    use tokio::io::{AsyncRead, AsyncSeek, AsyncWrite, BufReader, BufWriter};
+
+    #[cfg(not(feature = "tokio"))]
     use tokio_util::compat::{
         TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
     };
@@ -707,13 +724,22 @@ mod test {
 
         let path = "target/encode_decode.test";
 
+        #[cfg(not(feature = "tokio"))]
         let mut file = File::create(path).await?.compat_write();
+
+        #[cfg(feature = "tokio")]
+        let mut file = File::create(path).await?;
 
         let mut writer = BinaryWriter::new(&mut file, Default::default());
         entry.encode(&mut writer).await?;
         writer.flush().await?;
 
+        #[cfg(not(feature = "tokio"))]
         let mut file = File::open(path).await?.compat();
+
+        #[cfg(feature = "tokio")]
+        let mut file = File::open(path).await?;
+
         let mut reader = BinaryReader::new(&mut file, Default::default());
 
         let mut decoded_entry: Entry = Default::default();
@@ -731,7 +757,11 @@ mod test {
 
         let write_file =
             tokio::fs::File::create("target/async-tokio.test").await?;
+        #[cfg(not(feature = "tokio"))]
         let mut write_file = write_file.compat_write();
+        #[cfg(feature = "tokio")]
+        let mut write_file = write_file;
+
         let mut writer =
             BinaryWriter::new(&mut write_file, Default::default());
         writer.write_string(&mock_str).await?;
@@ -740,7 +770,10 @@ mod test {
 
         let read_file =
             tokio::fs::File::open("target/async-tokio.test").await?;
+        #[cfg(not(feature = "tokio"))]
         let mut read_file = read_file.compat();
+        #[cfg(feature = "tokio")]
+        let mut read_file = read_file;
         let mut reader =
             BinaryReader::new(&mut read_file, Default::default());
 

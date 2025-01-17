@@ -1,6 +1,6 @@
 [package]
 name = "binary-stream"
-version = "9.1.0"
+version = "10.0.0"
 authors = [
   "Mathias Danielsen <mathiasda98@hotmail.com>",
   "Muji <muji@tmpfs.org>"
@@ -16,12 +16,14 @@ license = "MIT"
 default = ["tokio-compat-flush"]
 64bit = []
 async = ["dep:futures", "dep:async-trait"]
+tokio = ["dep:tokio"]
 # SEE: https://github.com/tokio-rs/tokio/issues/5764
 tokio-compat-flush = []
 
 [dependencies]
 futures = { version = "0.3", optional = true }
 async-trait = { version = "0.1", optional = true }
+tokio = { version = "1", default-features = false, features = ["io-util"], optional = true }
 
 [dev-dependencies]
 anyhow = "1"

@@ -1,7 +1,7 @@
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
 //! Read and write binary data to streams.
 //!
-//! An asynchronous version using [futures::io](https://docs.rs/futures/latest/futures/io/index.html) is available using the `async` feature.
+//! An asynchronous version using [futures::io](https://docs.rs/futures/latest/futures/io/index.html) is available using the `async` feature and if the `tokio` feature flag is given then the implementation will use the traits from `tokio::io` instead which avoids the need to use the compat traits from `tokio-util` if you are using the tokio runtime.
 //!
 //! Strings are length prefixed using `u32` by default, use
 //! the `64bit` feature if you really need huge strings.
