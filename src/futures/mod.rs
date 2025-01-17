@@ -246,17 +246,11 @@ impl<W: AsyncWrite + AsyncSeek + Unpin> BinaryWriter<W> {
 
     /// Seek to a position.
     pub async fn seek(&mut self, to: SeekFrom) -> Result<u64> {
-        if cfg!(feature = "tokio-compat-flush") {
-            self.stream.flush().await?;
-        }
         Ok(self.stream.seek(to).await?)
     }
 
     /// Get the current position.
     pub async fn stream_position(&mut self) -> Result<u64> {
-        if cfg!(feature = "tokio-compat-flush") {
-            self.stream.flush().await?;
-        }
         Ok(self.stream.stream_position().await?)
     }
 

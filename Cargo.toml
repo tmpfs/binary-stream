@@ -13,12 +13,10 @@ keywords = ["binary", "reader", "writer"]
 license = "MIT"
 
 [features]
-default = ["tokio-compat-flush"]
+default = []
 64bit = []
 async = ["dep:futures", "dep:async-trait"]
 tokio = ["dep:tokio"]
-# SEE: https://github.com/tokio-rs/tokio/issues/5764
-tokio-compat-flush = []
 
 [dependencies]
 futures = { version = "0.3", optional = true }
