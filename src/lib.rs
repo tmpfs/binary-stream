@@ -28,7 +28,7 @@ macro_rules! encode_endian {
             Endian::Little => $value.to_le_bytes(),
             Endian::Big => $value.to_be_bytes(),
         };
-        return Ok($stream.write(&data)?);
+        return $stream.write(&data);
     };
 }
 
@@ -120,16 +120,17 @@ impl<R: Read + Seek> BinaryReader<R> {
 
     /// Seek to a position.
     pub fn seek(&mut self, to: SeekFrom) -> Result<u64> {
-        Ok(self.stream.seek(to)?)
+        self.stream.seek(to)
     }
 
     /// Get the current seek position.
     pub fn stream_position(&mut self) -> Result<u64> {
-        Ok(self.stream.stream_position()?)
+        self.stream.stream_position()
     }
 
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&mut self) -> Result<u64> {
         stream_length(&mut self.stream)
     }
@@ -149,14 +150,13 @@ impl<R: Read + Seek> BinaryReader<R> {
             self.stream.read_exact(&mut chars)?;
             chars
         };
-        Ok(String::from_utf8(chars)
-            .map_err(|_| Error::new(ErrorKind::Other, "invalid utf-8"))?)
+        String::from_utf8(chars).map_err(|_| Error::other("invalid utf-8"))
     }
 
     /// Read a character from the stream.
     pub fn read_char(&mut self) -> Result<char> {
         std::char::from_u32(self.read_u32()?)
-            .ok_or_else(|| Error::new(ErrorKind::Other, "invalid character"))
+            .ok_or_else(|| Error::other("invalid character"))
     }
 
     /// Read a `bool` from the stream.
@@ -307,16 +307,17 @@ impl<W: Write + Seek> BinaryWriter<W> {
 
     /// Seek to a position.
     pub fn seek(&mut self, to: SeekFrom) -> Result<u64> {
-        Ok(self.stream.seek(to)?)
+        self.stream.seek(to)
     }
 
     /// Get the current seek position.
     pub fn stream_position(&mut self) -> Result<u64> {
-        Ok(self.stream.stream_position()?)
+        self.stream.stream_position()
     }
 
     /// Get the length of this stream by seeking to the end
     /// and then restoring the previous cursor position.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&mut self) -> Result<u64> {
         stream_length(&mut self.stream)
     }
@@ -330,7 +331,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
         } else {
             self.write_u32(bytes.len() as u32)?;
         }
-        Ok(self.stream.write(bytes)?)
+        self.stream.write(bytes)
     }
 
     /// Write a character to the stream.
@@ -423,7 +424,7 @@ impl<W: Write + Seek> BinaryWriter<W> {
     /// Write a byte buffer to the stream.
     pub fn write_bytes<B: AsRef<[u8]>>(&mut self, data: B) -> Result<usize> {
         guard_size!(data.as_ref().len(), self.options.max_buffer_size);
-        Ok(self.stream.write(data.as_ref())?)
+        self.stream.write(data.as_ref())
     }
 
     /// Flush the write buffer.
