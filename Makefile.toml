@@ -1,8 +1,6 @@
-extend= [
-  { path = "coverage_grcov.makefile.toml" }
-]
 [config]
 default_to_workspace = false
+skip_core_tasks = true
 
 [env]
 RUST_BACKTRACE = 0
@@ -57,24 +55,21 @@ dependencies = ["test", "format"]
 
 [tasks.clean-profraw]
 script = '''
-rm *.profraw
+rm -f *.profraw
 '''
 
 [tasks.clean-coverage]
 script = '''
-rm -rf ./target/cover
-rm -rf ./target/coverage
-rm -f ./target/lcov.info
+rm -rf ./target/llvm-cov
 '''
 dependencies = ["clean-profraw"]
 
-[tasks.genhtml]
+[tasks.coverage]
 script = '''
-grcov . -s src --binary-path ./target/debug -t html --branch --ignore-not-existing -o ./target/coverage/ --ignore 'tests/*' --ignore 'target/*'
+cargo llvm-cov clean
+cargo llvm-cov test
+cargo llvm-cov report --html
 '''
 
-[tasks.coverage]
-alias = "coverage_grcov"
-
 [tasks.cover]
-dependencies = ["clean-coverage", "coverage", "genhtml", "clean-profraw"]
+dependencies = ["clean-coverage", "coverage", "clean-profraw"]
